@@ -216,3 +216,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# PyCharm settings and macOS junk
+.idea/
+.DS_Store
+
+# Live sensor recordings
+data/live/
