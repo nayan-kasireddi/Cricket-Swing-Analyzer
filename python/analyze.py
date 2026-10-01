@@ -8,12 +8,20 @@ import numpy as np
 from python.ingest import load_csv  # validated loading lives in ingest.py
 
 # --- core.py hookup: one place to swap in Nayan's version ---
-try:
+# Nayan's core.py currently has empty placeholders. Set USE_CORE = True
+# once his acceleration_magnitude() returns real values.
+USE_CORE = False
+
+
+def _standin_acceleration_magnitude(df):
+    """Stand-in: sqrt(ax^2 + ay^2 + az^2)."""
+    return np.sqrt(df["ax"] ** 2 + df["ay"] ** 2 + df["az"] ** 2).to_numpy()
+
+
+if USE_CORE:
     from python.core import acceleration_magnitude
-except ImportError:
-    def acceleration_magnitude(df):
-        """Stand-in until Nayan's core.py exists: sqrt(ax^2 + ay^2 + az^2)."""
-        return np.sqrt(df["ax"] ** 2 + df["ay"] ** 2 + df["az"] ** 2).to_numpy()
+else:
+    acceleration_magnitude = _standin_acceleration_magnitude
 
 
 def rotation_magnitude(df):

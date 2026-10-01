@@ -40,6 +40,14 @@
 - All 18 tests pass in the shared repo (14 ingest + 4 parser)
 - Next: check .gitignore, make first commit and push, then message Nayan about the CSV format and core.py signatures
 
+## 2026-10-01 (session 5)
+- Wrote python/swings.py: stand-in detect_swings(df, threshold) (threshold 2.5 g with hysteresis, releases at 80% of threshold, ignores spikes under 0.05 s) and summarize_swings(df, swings) (one row per swing: start, end, duration, peak accel, peak rotation)
+- multi_swing.csv gives 3 swings, each ~0.51 s long with peak ~8.4 g and ~1000 deg/s
+- Bug found: Nayan's core.py has placeholder functions whose body is `pass`, so they return None. analyze.py was importing his empty acceleration_magnitude() and detect_swings crashed with "NoneType is not iterable". Fixed with a USE_CORE flag in analyze.py: False uses my stand-in, set True once his version returns real values
+- Name mismatch to resolve: core.py has detect_swing(df, threshold) (singular), my stand-in is detect_swings(df, threshold) (plural). Need to agree on one name and the return format (list of (start_time, end_time) pairs)
+- Wrote python/tests/test_swings.py: stationary -> 0 swings, slow swing -> 0, normal swing -> 1, multi swing -> 3, plus edge cases (high threshold, single-sample spike, recording that ends mid-swing, empty summary). All 28 tests pass
+- Next: commit and push, message Nayan about the CSV format and the core.py names, then build the Streamlit dashboard
+
 ## Open items / TODO
 - Text Nayan: propose CSV format (time in seconds, g, deg/s, 100 Hz) and core.py signatures: acceleration_magnitude(df) -> array, detect_swings(df, threshold) -> list of (start_time, end_time). Record the agreed final version here as a new dated entry
 - Ask Nayan how Serial output becomes a CSV file (not assigned to either of us in the plan)
