@@ -1,1 +1,1 @@
-// Week 1: ESP32 LED + button test
+// Week 1: Raspberry Pi Pico 2 LED + button test
