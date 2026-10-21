@@ -13,11 +13,11 @@ def write(df, tmp_path, name="data.csv"):
 def test_valid_stationary_file_loads(tmp_path):
     df = load_csv(write(make_stationary(), tmp_path))
     assert list(df.columns) == ["time", "ax", "ay", "az", "gx", "gy", "gz"]
-    assert len(df) == 500
+    assert len(df) == 2500
 
 
 def test_valid_swing_file_loads(tmp_path):
-    assert len(load_csv(write(make_swing(), tmp_path))) == 300
+    assert len(load_csv(write(make_swing(), tmp_path))) == 1500
 
 
 def test_missing_file(tmp_path):
@@ -98,4 +98,21 @@ def test_millisecond_timestamps_are_converted(tmp_path, monkeypatch):
     df = make_stationary()
     df["time"] = df["time"] * 1000          # firmware-style milliseconds
     loaded = ingest.load_csv(write(df, tmp_path))
-    assert loaded["time"].iloc[-1] == pytest.approx(4.99)
+    assert loaded["time"].iloc[-1] == pytest.approx(4.998)
+
+
+def test_firmware_format_is_loaded(tmp_path):
+    """Nayan's real output: comment lines, microsecond time, unit-suffixed names, skipped_slots."""
+    df = make_stationary()
+    df["time"] = (df["time"] * 1_000_000).round().astype(int)
+    df["skipped_slots"] = 0
+    df.columns = ["time_us", "ax_g", "ay_g", "az_g", "gx_dps", "gy_dps", "gz_dps", "skipped_slots"]
+    path = tmp_path / "firmware.csv"
+    with open(path, "w") as f:
+        f.write("# MPU6050 500 Hz target | polling | +/-16g | +/-2000dps\n")
+        df.iloc[:100].to_csv(f, index=False)
+        f.write("# Sensor I2C read failed\n")
+        df.iloc[100:].to_csv(f, index=False, header=False)
+    loaded = load_csv(path)
+    assert list(loaded.columns) == ["time", "ax", "ay", "az", "gx", "gy", "gz"]
+    assert loaded["time"].iloc[-1] == pytest.approx(4.998)

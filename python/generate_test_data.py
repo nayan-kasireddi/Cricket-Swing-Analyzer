@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-SAMPLE_RATE_HZ = 100
+SAMPLE_RATE_HZ = 500
 
 
 def make_stationary(duration_s=5.0, seed=0):

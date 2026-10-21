@@ -1,18 +1,21 @@
 """Live viewer and recorder for streaming IMU data.
 
-The ESP32 firmware should print one line per sample over Serial:
+The Pico firmware (pico2w_mpu6050.ino) prints one line per sample over Serial:
 
-    time,ax,ay,az,gx,gy,gz
+    time_us,ax_g,ay_g,az_g,gx_dps,gy_dps,gz_dps,skipped_slots
 
-e.g.  1520,0.02,-0.01,0.99,0.3,-0.2,0.1
+e.g.  94754100,0.1135,-0.0537,1.0270,-0.55,1.69,0.78,0
+
+Lines starting with "#" (startup banner, I2C error notes) are ignored. The recording is
+saved with the header "time_us,ax,ay,az,gx,gy,gz" (skipped_slots is dropped).
 
 Run from the project root:
     python -m python.live --sim                        # fake sensor, no hardware needed
-    python -m python.live --list-ports                 # find the ESP32's port
-    python -m python.live --port /dev/cu.usbserial-0001
+    python -m python.live --list-ports                 # find the board's port
+    python -m python.live --port /dev/cu.usbmodemXXXX   # use --list-ports to find it
 
 Close the plot window to stop. Everything received is saved to data/live/*.csv
-exactly as received, so load_csv() handles any unit conversion (TIME_TO_SECONDS).
+with time in microseconds; load_csv() converts it to seconds.
 """
 import argparse
 import threading
@@ -26,7 +29,9 @@ import numpy as np
 from matplotlib.animation import FuncAnimation
 
 from python.generate_test_data import make_multi_swing
-from python.ingest import EXPECTED_COLUMNS, TIME_TO_SECONDS
+from python.ingest import EXPECTED_COLUMNS
+
+SERIAL_TIME_TO_SECONDS = 1e-6   # the firmware reports time in microseconds
 
 BAUD_RATE = 115200
 DEFAULT_THRESHOLD_G = 2.5
@@ -35,10 +40,11 @@ WINDOW_SECONDS = 5.0        # how much history the live graph shows
 
 
 def parse_line(line):
-    """Turn 'time,ax,ay,az,gx,gy,gz' into a list of floats, or None if it isn't a valid sample."""
+    """Turn 'time,ax,ay,az,gx,gy,gz[,skipped_slots]' into a list of 7 floats, or None if invalid."""
     parts = line.strip().split(",")
-    if len(parts) != len(EXPECTED_COLUMNS):
+    if len(parts) not in (len(EXPECTED_COLUMNS), len(EXPECTED_COLUMNS) + 1):
         return None
+    parts = parts[:len(EXPECTED_COLUMNS)]
     try:
         return [float(p) for p in parts]
     except ValueError:
@@ -46,7 +52,7 @@ def parse_line(line):
 
 
 class SerialSource:
-    """Real sensor: reads lines from the ESP32 over USB."""
+    """Real sensor: reads lines from the board over USB."""
 
     def __init__(self, port, baud=BAUD_RATE):
         import serial  # imported here so --sim works without pyserial installed
@@ -61,9 +67,9 @@ class SerialSource:
 
 
 class SimulatedSource:
-    """Fake sensor: replays the synthetic multi-swing recording in a loop at 100 Hz."""
+    """Fake sensor: replays the synthetic multi-swing recording in a loop at 500 Hz."""
 
-    def __init__(self, rate_hz=100):
+    def __init__(self, rate_hz=500):
         self.rows = make_multi_swing()[EXPECTED_COLUMNS].to_numpy()
         self.dt = 1.0 / rate_hz
         self.period = len(self.rows) * self.dt
@@ -78,7 +84,7 @@ class SimulatedSource:
             time.sleep(delay)
         row = self.rows[self.i]
         t = row[0] + self.loop * self.period
-        values = [t / TIME_TO_SECONDS] + list(row[1:])   # raw units, like real firmware
+        values = [t / SERIAL_TIME_TO_SECONDS] + list(row[1:])   # microseconds, like real firmware
         self.i += 1
         if self.i == len(self.rows):
             self.i, self.loop = 0, self.loop + 1
@@ -122,17 +128,17 @@ class LiveStream:
     def _run(self):
         try:
             with open(self.csv_path, "w") as f:
-                f.write(",".join(EXPECTED_COLUMNS) + "\n")
+                f.write(",".join(["time_us"] + EXPECTED_COLUMNS[1:]) + "\n")
                 while not self._stop.is_set():
                     line = self.source.readline()
                     if not line:
                         continue
                     row = parse_line(line)
                     if row is None:     # boot messages, partial lines, debug prints
-                        if not line.lower().startswith(EXPECTED_COLUMNS[0]):
+                        if not line.startswith("#") and not line.lower().startswith(EXPECTED_COLUMNS[0]):
                             self.bad_lines += 1
                         continue
-                    f.write(line.strip() + "\n")
+                    f.write(",".join(line.strip().split(",")[:len(EXPECTED_COLUMNS)]) + "\n")
                     self._handle(row)
                     if self.total % 100 == 0:
                         f.flush()
@@ -140,7 +146,7 @@ class LiveStream:
             self.error = e
 
     def _handle(self, row):
-        t = row[0] * TIME_TO_SECONDS
+        t = row[0] * SERIAL_TIME_TO_SECONDS
         acc = float(np.sqrt(row[1] ** 2 + row[2] ** 2 + row[3] ** 2))
         gyro = float(np.sqrt(row[4] ** 2 + row[5] ** 2 + row[6] ** 2))
         with self.lock:
@@ -201,7 +207,7 @@ def run_live_plot(stream, window_s=WINDOW_SECONDS):
 def main():
     ap = argparse.ArgumentParser(description="Live IMU viewer and recorder")
     ap.add_argument("--sim", action="store_true", help="use a simulated sensor")
-    ap.add_argument("--port", help="serial port of the ESP32")
+    ap.add_argument("--port", help="serial port of the board")
     ap.add_argument("--baud", type=int, default=BAUD_RATE)
     ap.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD_G)
     ap.add_argument("--out", help="CSV path (default: data/live/live_<timestamp>.csv)")

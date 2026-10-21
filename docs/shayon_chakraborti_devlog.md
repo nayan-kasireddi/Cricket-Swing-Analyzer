@@ -48,6 +48,13 @@
 - Wrote python/tests/test_swings.py: stationary -> 0 swings, slow swing -> 0, normal swing -> 1, multi swing -> 3, plus edge cases (high threshold, single-sample spike, recording that ends mid-swing, empty summary). All 28 tests pass
 - Next: commit and push, message Nayan about the CSV format and the core.py names, then build the Streamlit dashboard
 
+## 2026-10-21 (session 2)
+- Updated ingest.py and live.py to match the Pico firmware's real output (time in microseconds, unit-suffixed column names, extra skipped_slots column, # comment lines). Target rate is now 500 Hz
+- Regenerated synthetic data at 500 Hz and added tests for the firmware format (31 tests pass)
+- Wrote python/dashboard.py (Streamlit): recording picker, threshold slider, acceleration and rotation plots with detected swings shaded, swing summary table, and per-swing detail view
+- Run with: python -m streamlit run python/dashboard.py
+- Still waiting on real recordings from Nayan to retune the threshold
+
 ## Open items / TODO
 - Text Nayan: propose CSV format (time in seconds, g, deg/s, 100 Hz) and core.py signatures: acceleration_magnitude(df) -> array, detect_swings(df, threshold) -> list of (start_time, end_time). Record the agreed final version here as a new dated entry
 - Ask Nayan how Serial output becomes a CSV file (not assigned to either of us in the plan)

@@ -2,11 +2,21 @@
 import numpy as np
 import pandas as pd
 
-# --- Format settings: placeholders until agreed with Nayan. Edit here only. ---
+# --- Format settings. Edit here only. ---
+# Canonical column names used everywhere in the Python code.
 EXPECTED_COLUMNS = ["time", "ax", "ay", "az", "gx", "gy", "gz"]
-TARGET_SAMPLE_RATE_HZ = 100
+# Nayan's firmware (pico2w_mpu6050.ino) writes different names; they are renamed on load.
+# It also writes a "skipped_slots" column and "#" comment lines, which are ignored.
+COLUMN_ALIASES = {
+    "time_us": "time", "time_ms": "time", "time_s": "time",
+    "ax_g": "ax", "ay_g": "ay", "az_g": "az",
+    "gx_dps": "gx", "gy_dps": "gy", "gz_dps": "gz",
+}
+# Time units implied by the column name. A plain "time" column uses TIME_TO_SECONDS.
+TIME_UNITS_BY_NAME = {"time_us": 1e-6, "time_ms": 1e-3, "time_s": 1.0}
+TARGET_SAMPLE_RATE_HZ = 500       # firmware samples at 500 Hz (2000 us interval)
 SAMPLE_RATE_TOLERANCE = 0.2       # allow +/-20% around the target
-TIME_TO_SECONDS = 1.0             # use 0.001 if Nayan's time column is in milliseconds
+TIME_TO_SECONDS = 1.0             # for a plain "time" column: 0.001 if milliseconds
 MAX_GAP_FACTOR = 3.0              # a gap > 3x the typical spacing means dropped samples
 MAX_ACCEL_G = 16.0                # MPU6050's largest accelerometer range
 MAX_GYRO_DPS = 2000.0             # MPU6050's largest gyroscope range
@@ -25,7 +35,8 @@ def _rows(index):
 def load_csv(path):
     """Load a CSV, validate it, and return a clean DataFrame."""
     try:
-        df = pd.read_csv(path)
+        # comment="#" skips the firmware's "# MPU6050 500 Hz ..." and "# Sensor I2C read failed" lines
+        df = pd.read_csv(path, comment="#")
     except FileNotFoundError:
         raise DataValidationError(f"File not found: {path}") from None
     except pd.errors.EmptyDataError:
@@ -33,7 +44,12 @@ def load_csv(path):
     except pd.errors.ParserError as e:
         raise DataValidationError(f"Could not parse {path} as CSV: {e}") from None
 
-    # 1. Columns
+    # 1. Columns (rename firmware-style names, remember the time units)
+    time_scale = TIME_TO_SECONDS
+    for name, scale in TIME_UNITS_BY_NAME.items():
+        if name in df.columns and "time" not in df.columns:
+            time_scale = scale
+    df = df.rename(columns={k: v for k, v in COLUMN_ALIASES.items() if v not in df.columns})
     missing = [c for c in EXPECTED_COLUMNS if c not in df.columns]
     if missing:
         raise DataValidationError(
@@ -69,7 +85,7 @@ def load_csv(path):
     # 4. Timestamps and sample rate
     if len(df) < 2:
         raise DataValidationError("Need at least 2 rows to check the sample rate.")
-    dt = np.diff(df["time"].to_numpy()) * TIME_TO_SECONDS
+    dt = np.diff(df["time"].to_numpy()) * time_scale
     if (dt <= 0).any():
         first = int(np.argmax(dt <= 0)) + 1
         raise DataValidationError(
@@ -104,5 +120,5 @@ def load_csv(path):
             f"{_rows(df.index[gyro_bad])}. Check units or sensor range setting."
         )
 
-    df["time"] = df["time"] * TIME_TO_SECONDS
+    df["time"] = df["time"] * time_scale
     return df
