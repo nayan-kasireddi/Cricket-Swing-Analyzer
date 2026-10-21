@@ -24,3 +24,13 @@
 - Investigated possible wiring and breadboard connection issues.
 - Identified that the sensor's header pins are not soldered.
 - Next step: Solder the header pins to establish reliable connections before continuing sensor testing.
+
+## October 20, 2026 – MPU6050 Data Collection and GitHub Update
+- Soldered the MPU6050 sensor's header pins to establish secure and reliable connections with the breadboard and Raspberry Pi Pico 2 W.
+- Successfully established reliable I²C communication between the Pico 2 W and MPU6050 sensor at address `0x68`.
+- Verified accelerometer and gyroscope readings through the Arduino IDE Serial Monitor.
+- Configured the MPU6050 to collect 3-axis acceleration and 3-axis angular velocity data at approximately 100 Hz.
+- Implemented CSV-formatted serial output containing `time,ax,ay,az,gx,gy,gz`.
+- Created `firmware/pico2w_mpu6050/pico2w_mpu6050.ino` to store the sensor firmware.
+- Committed and pushed the firmware to the GitHub repository, integrating the latest remote changes.
+- Next steps: Test sensor readings during controlled movements, begin designing the circuit schematic in KiCad, and develop Python scripts for processing motion data.
