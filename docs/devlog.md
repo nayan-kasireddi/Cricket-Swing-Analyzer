@@ -34,3 +34,14 @@
 - Created `firmware/pico2w_mpu6050/pico2w_mpu6050.ino` to store the sensor firmware.
 - Committed and pushed the firmware to the GitHub repository, integrating the latest remote changes.
 - Next steps: Test sensor readings during controlled movements, begin designing the circuit schematic in KiCad, and develop Python scripts for processing motion data.
+
+## October 21, 2026 – 500 Hz Firmware Optimization and Sensor Validation
+- Updated the Raspberry Pi Pico 2 W firmware to increase the MPU6050 sampling rate from 100 Hz to 500 Hz.
+- Configured the accelerometer range to ±16g and gyroscope range to ±2000°/s to better capture rapid cricket bat movements and potential impact events.
+- Initially tested interrupt-based data collection using the MPU6050 INT pin, but switched to timed I²C polling to maintain compatibility with the existing four-wire breadboard setup.
+- Successfully collected real-time, timestamped accelerometer and gyroscope data through the Arduino IDE Serial Monitor.
+- Verified consistent sampling intervals of approximately 2,000 microseconds (2 ms), corresponding to 500 Hz.
+- Confirmed that the firmware reported zero skipped scheduling intervals during the observed test.
+- Validated stationary sensor measurements, with acceleration magnitude approximately 1.02g and small gyroscope offsets.
+- Completed initial firmware and sensor communication validation for the higher-frequency data acquisition system.
+- Next steps: Record longer datasets, calibrate sensor offsets, test controlled cricket bat swings, and begin developing Python algorithms for swing and impact detection.
