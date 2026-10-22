@@ -55,6 +55,14 @@
 - Run with: python -m streamlit run python/dashboard.py
 - Still waiting on real recordings from Nayan to retune the threshold
 
+## 2026-10-21 (session 3)
+- Hardware test: borrowed Nayan's Pico 2 W + MPU6050; confirmed 500 Hz output, az ~1 g at rest, skipped_slots 0
+- Added Live view mode to the Streamlit dashboard (serial port picker, start/stop, live plots, saves a CSV)
+- Replaced swing counting with SwingTracker (swings.py), shared by the live view and the Recordings detector: swing stays active while acceleration is high or rotation > 150 deg/s, ends after 0.2 s quiet, 1 s cooldown. One swing now counts once.
+- Added tests for a 3-spike bat swing, two separate swings, and the cooldown
+- Researched bat speeds (about 28 m/s male, 23 m/s female power hitting): hard swings may exceed the +/-16 g accelerometer range depending on sensor placement. Needs checking with real bat data.
+- Next: wireless (BLE with on-board swing recording), battery, housing, real bat recordings
+
 ## Open items / TODO
 - Text Nayan: propose CSV format (time in seconds, g, deg/s, 100 Hz) and core.py signatures: acceleration_magnitude(df) -> array, detect_swings(df, threshold) -> list of (start_time, end_time). Record the agreed final version here as a new dated entry
 - Ask Nayan how Serial output becomes a CSV file (not assigned to either of us in the plan)

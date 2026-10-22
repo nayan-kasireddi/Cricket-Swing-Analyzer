@@ -30,12 +30,11 @@ from matplotlib.animation import FuncAnimation
 
 from python.generate_test_data import make_multi_swing
 from python.ingest import EXPECTED_COLUMNS
+from python.swings import DEFAULT_THRESHOLD_G, SwingTracker
 
 SERIAL_TIME_TO_SECONDS = 1e-6   # the firmware reports time in microseconds
 
 BAUD_RATE = 115200
-DEFAULT_THRESHOLD_G = 2.5
-RELEASE_FRACTION = 0.8      # a swing ends when accel drops below 80% of the threshold
 WINDOW_SECONDS = 5.0        # how much history the live graph shows
 
 
@@ -108,9 +107,7 @@ class LiveStream:
         self.swings = 0
         self.last_swing = ""
         self.error = None
-        self._in_swing = False
-        self._swing_start = 0.0
-        self._swing_peak = 0.0
+        self.tracker = SwingTracker(threshold_g)
         self._stop = threading.Event()
         self._thread = threading.Thread(target=self._run, daemon=True)
 
@@ -153,17 +150,15 @@ class LiveStream:
             self.samples.append((t, acc, gyro))
             self.total += 1
 
-        # Rough live swing indicator (NOT Nayan's algorithm): threshold with hysteresis
-        if not self._in_swing and acc > self.threshold:
-            self._in_swing, self._swing_start, self._swing_peak = True, t, acc
-        elif self._in_swing:
-            self._swing_peak = max(self._swing_peak, acc)
-            if acc < self.threshold * RELEASE_FRACTION:
-                self._in_swing = False
-                self.swings += 1
-                self.last_swing = (f"swing {self.swings}: peak {self._swing_peak:.1f} g, "
-                                   f"{t - self._swing_start:.2f} s above threshold")
-                print(self.last_swing)
+        # Same swing logic as the Recordings detector (see swings.py): a swing stays "active"
+        # while acceleration is high OR the bat is still rotating, so one swing counts once.
+        self.tracker.threshold_g = self.threshold      # follows the slider
+        done = self.tracker.update(t, acc, gyro)
+        if done:
+            self.swings += 1
+            self.last_swing = (f"swing {self.swings}: peak {done['peak_g']:.1f} g, "
+                               f"{done['peak_dps']:.0f} deg/s, {done['end'] - done['start']:.2f} s")
+            print(self.last_swing)
 
 
 def run_live_plot(stream, window_s=WINDOW_SECONDS):
