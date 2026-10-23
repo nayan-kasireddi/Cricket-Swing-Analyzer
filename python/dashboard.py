@@ -43,7 +43,7 @@ def stop_live():
         source.close()
 
 
-@st.fragment(run_every=0.3)
+@st.fragment(run_every=0.15)
 def live_panel():
     """Redraws every 0.3 s without rerunning the whole page."""
     stream = st.session_state.get("live_stream")
