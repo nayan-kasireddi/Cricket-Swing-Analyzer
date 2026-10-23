@@ -11,7 +11,7 @@ A sensor on a cricket bat, and a website that turns its motion into swings you c
 - **Reads the sensor:** the firmware samples 3-axis acceleration and 3-axis rotation at a **500 Hz** target (±16 g, ±2000 deg/s) and streams them over USB.
 - **Shows your practice live:** the Crease website connects to the sensor from the browser, draws your swing as it happens, and counts each swing.
 - **Reviews every session:** a session chart with the detected swings shaded, a scorecard for each swing, and a summary you can download.
-- **Works without a sensor:** a demo mode lets anyone try the site with sample data, and saved recordings can be reviewed in any modern desktop browser.
+- **Works without a sensor:** a demo mode lets anyone try the site with sample data.
 - **Keeps your data private:** your readings stay in your browser.
 
 ## Try it
@@ -93,4 +93,114 @@ time_us,ax_g,ay_g,az_g,gx_dps,gy_dps,gz_dps,skipped_slots
 ```
 
 | Field | Description | Unit |
-|
+|---|---|---|
+| time_us | Time since the board powered on | Microseconds |
+| ax_g, ay_g, az_g | Acceleration along X, Y, Z | g |
+| gx_dps, gy_dps, gz_dps | Rotation around X, Y, Z | Degrees/second |
+| skipped_slots | Sample slots missed so far | Count |
+
+Lines starting with `#` (a startup banner and sensor error notes) are not data. A 500 Hz target is not a guarantee that every sample arrives on time, so check `skipped_slots` and the sample rate in recordings.
+
+## Python tools
+
+The `python/` folder holds the analysis code used to build and test the project, and it still works on its own for offline checks of recordings.
+
+| File | What it does |
+|---|---|
+| `python/ingest.py` | `load_csv()`: loads a recording, converts units, and checks it (columns, 500 Hz rate, gaps, increasing timestamps, plausible ranges) |
+| `python/swings.py` | `SwingTracker`, `detect_swings()`, `summarize_swings()` |
+| `python/analyze.py` | Acceleration and rotation magnitude, static plots from the command line |
+| `python/live.py` | Reads the serial port, saves a CSV, and logs swings |
+| `python/generate_test_data.py` | Makes synthetic recordings (stationary, slow, normal and multi-swing) |
+| `python/dashboard.py`, `python/ui.py` | An earlier Streamlit dashboard, kept for reference |
+| `python/core.py` | Placeholder for an alternative analysis implementation, not used |
+| `python/tests/` | Automated tests |
+
+```bash
+git clone https://github.com/nayan-kasireddi/Cricket-Swing-Analyzer.git
+cd Cricket-Swing-Analyzer
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+python -m pytest -q                       # run the automated tests
+python -m python.live --sim               # live graph with a fake sensor
+python -m python.analyze data/synthetic/multi_swing.csv   # static plots from a recording
+```
+
+Developed on Python 3.14, and Python 3.12 has also been validated. Package versions are not pinned in `requirements.txt`, so a newer release of a library could behave differently.
+
+### Why one swing counts once
+
+A bat swing is one smooth sweep of rotation, but the acceleration has several spikes inside it: the hands speeding the bat up, a peak around contact, and the sudden stop in the follow-through, with dips in between. Counting every spike would count one swing three times.
+
+The Python `SwingTracker` treats a swing as active while the force is high **or** the bat is still rotating faster than 150 deg/s. It ends the swing only after things stay calm for 0.2 s, and then ignores new swings for 1 s (a batter cannot swing again that fast).
+
+## Current status and limits
+
+This is a working prototype, and it has not yet seen real bat swings.
+
+- **Tuned on synthetic data and hand movements.** The swing trigger and the other detection settings are provisional. They need retuning on recordings from a sensor mounted on a bat.
+- **No bat speed, impact, or force in newtons.** The sensor measures acceleration and rotation only, and Crease reports exactly that.
+- **Sensor range:** at ±16 g and ±2000 deg/s, a hard hit with the sensor far from the hands could exceed the accelerometer's range.
+- **Browser support:** live sensor access needs desktop Chrome or Edge. Other browsers and phones can use the demo.
+- **Not built yet:** impact (bat-ball contact) detection, swing-type classification, and wireless transmission. These need real swing data first.
+
+## Development progress
+
+| Milestone | Status |
+|---|---|
+| Repository setup and documentation | Complete |
+| Pico 2 W firmware upload and LED testing | Complete |
+| MPU6050 wiring and soldering | Complete |
+| I²C sensor detection | Complete |
+| Accelerometer and gyroscope streaming | Complete |
+| 500 Hz firmware implementation | Complete |
+| CSV loading and data validation | Complete |
+| Swing detection (counted once per swing) | Complete |
+| Crease website: live practice and session review | Complete |
+| Automated tests (40+) | Complete |
+| Controlled swing data collection on a bat | Upcoming |
+| Threshold tuning on real swings | Upcoming |
+| Impact detection | Planned |
+| Swing-type classification | Planned |
+| KiCad schematic and PCB layout | In progress |
+| PCB fabrication and assembly | Planned |
+| Final demonstration | Planned |
+
+See [`docs/devlog.md`](docs/devlog.md) and [`docs/shayon_chakraborti_devlog.md`](docs/shayon_chakraborti_devlog.md) for detailed updates.
+
+## Troubleshooting
+
+| Issue | Suggested solution |
+|---|---|
+| Connect sensor does nothing, or the sensor is not listed | Use desktop Chrome or Edge, a data-capable USB cable, and replug the Pico |
+| "Port busy" or cannot open the port | Close the Arduino Serial Monitor or any other program using the sensor |
+| Readings stop or look wrong after a loose wire | Unplug and replug the Pico so the firmware sets the sensor up again |
+| Too many or too few swings | Adjust the swing trigger slider |
+| MPU6050 not detected | Check wiring, solder joints, and I²C address `0x68` |
+| Firmware upload fails | Hold BOOTSEL while plugging in the Pico, and confirm the board selection |
+
+## Authors
+
+Crease was developed by both authors.
+
+**Nayan Kasireddi** — hardware, firmware, and PCB design
+Electrical and Computer Engineering, The University of Texas at Austin
+GitHub: [@nayan-kasireddi](https://github.com/nayan-kasireddi)
+
+**Shayon Chakraborti** — Python data pipeline, swing detection, and testing
+Statistics and Data Science, The University of Texas at Austin
+GitHub: [@Shayon2307](https://github.com/Shayon2307)
+
+## Acknowledgments
+
+Built with the Raspberry Pi Pico platform, the MPU6050 motion sensor, Arduino, Python (NumPy, pandas, Matplotlib, pySerial), and KiCad. Hardware prototyping and fabrication resources are available through Texas Inventionworks at The University of Texas at Austin.
+
+## Project resources
+
+- [Crease website](https://creasecricketswing.netlify.app)
+- [GitHub repository](https://github.com/nayan-kasireddi/Cricket-Swing-Analyzer)
+- [Firmware](firmware/pico2w_mpu6050/pico2w_mpu6050.ino)
+- [Development logs](docs/)
+- [Python code](python/)
