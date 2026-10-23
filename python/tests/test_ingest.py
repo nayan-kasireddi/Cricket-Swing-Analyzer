@@ -116,3 +116,11 @@ def test_firmware_format_is_loaded(tmp_path):
     loaded = load_csv(path)
     assert list(loaded.columns) == ["time", "ax", "ay", "az", "gx", "gy", "gz"]
     assert loaded["time"].iloc[-1] == pytest.approx(4.998)
+
+@pytest.mark.parametrize("column", ["time", "ax", "gx"])
+@pytest.mark.parametrize("value", [float("inf"), float("-inf")])
+def test_infinite_values_are_rejected(tmp_path, column, value):
+    df = make_stationary()
+    df.loc[10, column] = value
+    with pytest.raises(DataValidationError, match="finite"):
+        load_csv(write(df, tmp_path))

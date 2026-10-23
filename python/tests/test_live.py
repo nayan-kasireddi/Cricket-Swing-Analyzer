@@ -96,3 +96,7 @@ def test_live_stream_logs_each_finished_swing_with_session_relative_times(tmp_pa
     assert swing["number"] == 1
     assert 0.8 < swing["start"] < 1.1          # relative to the first sample, not the board clock
     assert swing["peak_g"] > 8 and swing["peak_dps"] > 900
+
+def test_nonfinite_serial_values_are_rejected():
+    for value in ("nan", "inf", "-inf"):
+        assert parse_line(f"1000,{value},0,1,0,0,0") is None

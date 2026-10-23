@@ -63,6 +63,8 @@ class SwingTracker:
         self.in_swing = False
         self._armed = False
         self._blocked_until = self._last_active + REFRACTORY_SECONDS
+        if self._last_active - self._start < MIN_DURATION_S:
+            return None
         return {"start": self._start, "end": self._last_active,
                 "peak_g": self._peak_g, "peak_dps": self._peak_dps}
 

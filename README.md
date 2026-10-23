@@ -13,18 +13,22 @@ The system is being developed from initial breadboard prototyping through custom
 ### Current Capabilities
 
 - **Real-Time Motion Tracking:** Collects 3-axis acceleration and 3-axis angular velocity data using the MPU6050.
-- **100 Hz Sampling:** Firmware schedules sensor measurements at approximately 100 samples per second.
+- **500 Hz Target Sampling:** Firmware polls every 2000 microseconds; actual timing and skipped slots should be checked in recordings.
 - **I²C Communication:** Interfaces the Raspberry Pi Pico 2 W with the MPU6050 at address `0x68`.
 - **Serial Data Streaming:** Outputs timestamped sensor readings in CSV format at 115200 baud.
 - **Embedded Firmware:** Arduino-compatible C++ firmware for sensor initialization, data acquisition, and streaming.
 - **Hardware Prototyping:** Breadboard-based circuit with soldered sensor headers for reliable connections.
 
+### Python Capabilities
+
+- **Swing Detection:** Shared streaming and recorded-data detection using acceleration and rotation, with hysteresis, a quiet period, and cooldown.
+- **Recording Review:** Streamlit dashboard with recording selection, charts, per-swing summaries, and detail views.
+- **Live Capture:** USB serial dashboard and Matplotlib viewer, CSV recording, and a simulated source.
+- **Data Validation:** Firmware CSV normalization, timestamp/sample-rate checks, and sensor-range checks.
+
 ### Planned Capabilities
 
-- **Swing Detection:** Identify individual cricket bat swings using acceleration and gyroscope measurements.
 - **Impact Detection:** Investigate sudden motion changes and acceleration peaks associated with bat-ball contact.
-- **Motion Analysis:** Calculate acceleration magnitude, angular velocity, and swing characteristics.
-- **Data Visualization:** Generate plots and dashboards to examine recorded swings.
 - **Custom PCB:** Design and assemble a compact circuit using KiCad.
 - **Portable Integration:** Develop a hardware configuration suitable for mounting on a cricket bat.
 
@@ -60,7 +64,7 @@ The MPU6050 communicates with the Pico 2 W over I²C using address `0x68`.
 
 **Sensor:** MPU6050
 
-**Sampling frequency:** Approximately 100 Hz
+**Sampling frequency:** 500 Hz target (2000 microsecond polling interval)
 
 **Serial baud rate:** 115200
 
@@ -70,7 +74,9 @@ The MPU6050 communicates with the Pico 2 W over I²C using address `0x68`.
 - I²C communication at 400 kHz
 - Accelerometer and gyroscope data acquisition
 - Raw sensor value conversion into physical units
-- Timestamped CSV serial output
+- Microsecond timestamps, skipped-slot reporting, and CSV output
+- Accelerometer range ±16 g; gyroscope range ±2000 degrees/second
+- 400 kHz I²C with sensor configuration checks and comment-prefixed diagnostics
 - Basic sensor communication error handling
 
 ### Firmware Location
@@ -80,15 +86,17 @@ The MPU6050 communicates with the Pico 2 W over I²C using address `0x68`.
 ### Example Sensor Output
 
 ```csv
-time,ax,ay,az,gx,gy,gz
-94.7541,0.1135,-0.0537,1.0270,-0.5496,1.6947,0.7786
+time_us,ax_g,ay_g,az_g,gx_dps,gy_dps,gz_dps,skipped_slots
+94754100,0.1135,-0.0537,1.0270,-0.5496,1.6947,0.7786,0
 ```
 
 | Field | Description | Unit |
 |---|---|---|
-| time | Elapsed microcontroller time | Seconds |
-| ax, ay, az | Acceleration along X, Y, Z | g |
-| gx, gy, gz | Angular velocity around X, Y, Z | Degrees/second |
+| time_us | Microcontroller clock | Microseconds |
+| ax_g, ay_g, az_g | Acceleration along X, Y, Z | g |
+| gx_dps, gy_dps, gz_dps | Angular velocity around X, Y, Z | Degrees/second |
+
+`skipped_slots` reports missed scheduled polling slots. Lines beginning with `#` contain startup or error diagnostics. A 500 Hz target is not a guarantee that every sample arrives on time.
 
 ## Getting Started
 
@@ -127,54 +135,36 @@ The microcontroller should continuously stream timestamped acceleration and angu
 
 ## Python Analysis
 
-**Status: Planned / In Development**
+The Python workflow is implemented for recorded data and live USB capture. Run commands from the repository root. Python 3.12 is validated in the cloud environment; the repository does not pin package versions.
 
-The Python portion of the project will process recorded IMU measurements and extract meaningful motion characteristics.
-
-### Planned Libraries
-
-- **NumPy:** Numerical calculations and vector operations
-- **Pandas:** CSV loading and data organization
-- **Matplotlib:** Sensor data visualization
-- **SciPy:** Signal processing and peak detection
-
-### Planned Processing Pipeline
-
-1. Record acceleration and gyroscope data from the MPU6050.
-2. Load timestamped measurements into Python.
-3. Calculate acceleration magnitude.
-4. Filter unwanted noise and sensor fluctuations.
-5. Detect potential swing and impact events.
-6. Visualize and compare motion characteristics.
-
-### Acceleration Magnitude
-
-The total acceleration magnitude can be calculated using:
-
-\[
-a_{\text{mag}}=\sqrt{a_x^2+a_y^2+a_z^2}
-\]
-
-This combines acceleration along all three axes into a single measurement that can be analyzed for motion peaks.
-
-### Example Python Calculation
-
-```python
-import numpy as np
-import pandas as pd
-
-df = pd.read_csv("data/sensor_readings.csv")
-
-df["accel_magnitude"] = np.sqrt(
-    df["ax"]**2 +
-    df["ay"]**2 +
-    df["az"]**2
-)
-
-print(df[["time", "accel_magnitude"]].head())
+```bash
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+python -m pip install -r requirements.txt
+python -m pytest python/tests -q
+python -m streamlit run python/dashboard.py
 ```
 
-This is an illustrative example of the planned analysis workflow, not a completed swing-detection algorithm.
+The dashboard opens on **Live**: select the Pico serial port, start capture, then **Stop and save** to finish the CSV. Close other serial monitors first. On **Review**, choose a recording (the default is `data/synthetic/multi_swing.csv`), adjust the trigger, and inspect detected swings, peak acceleration, peak rotation, and duration. Recorded timelines are relative to the first saved sample. Live recordings go to ignored `data/live/` files.
+
+Without hardware, use Review with the bundled synthetic recordings or the simulated desktop viewer:
+
+```bash
+python -m python.live --sim
+python -m python.live --list-ports
+python -m python.live --port /dev/ttyACM0
+python -m python.analyze data/synthetic/normal_swing.csv
+```
+
+Use the port reported on your machine (for example `/dev/cu.usbmodem...` on macOS or `COM3` on Windows). The live viewer requires a graphical desktop; close its plot window to save and stop. The analysis command prints statistics, saves a PNG under `images/`, and opens plots. For headless analysis, set `MPLBACKEND=Agg`.
+
+`load_csv()` accepts firmware headers, ignores `#` diagnostics and `skipped_slots`, converts microseconds to seconds, and returns canonical `time,ax,ay,az,gx,gy,gz` columns. Synthetic files already use seconds. It rejects missing/non-numeric/non-finite values, unordered timestamps, large gaps, rates outside 500 Hz ±20%, and values outside ±16 g / ±2000 deg/s. Historical recordings with a different sample rate may be rejected; preserve the original data rather than relabeling it.
+
+`acceleration_magnitude()` combines the three acceleration axes (including gravity); rotation magnitude combines the three gyroscope axes. `SwingTracker` is shared by live and batch detection: default trigger 2.5 g, release at 80% of trigger, rotation hold at 150 deg/s, 0.2 seconds quiet before finishing, 1 second cooldown, minimum duration 0.05 seconds, and a 3 second safety cap. The live dashboard starts at 1.5 g for gentle hand movements. These are heuristic parameters to tune against real bat recordings, not validated impact detection or bat speed estimates. Values in g measure acceleration, not force in newtons, even where the dashboard uses the plain-language label “force.”
+
+NumPy, Pandas, and Matplotlib support analysis; PySerial supports USB capture; Streamlit provides the dashboard; pytest runs regression checks. SciPy is available for future signal processing. `python/core.py` remains an unused algorithm placeholder for ongoing work; the functioning magnitude calculation lives in `python/analyze.py`, and detection lives in `python/swings.py`.
+
+The generator `python -m python.generate_test_data` intentionally regenerates the four files under `data/synthetic/`; it does not replace `data/stationary.csv`. Existing tests exercise ingestion, parsing, swing detection, recording, and UI helpers. Physical hardware and firmware upload require a local Pico/MPU6050 setup.
 
 ## PCB Design
 
@@ -217,10 +207,12 @@ Cricket-Swing-Analyzer/
 | MPU6050 wiring and soldering | Complete |
 | I²C sensor detection | Complete |
 | Accelerometer and gyroscope data streaming | Complete |
-| 100 Hz firmware implementation | Complete |
+| 500 Hz target firmware implementation | Complete |
 | Controlled swing data collection | Upcoming |
-| Python signal processing | Planned |
-| Swing and impact detection | Planned |
+| Python CSV validation, magnitudes, and plotting | Complete |
+| Live USB capture and recording dashboard | Complete |
+| Heuristic swing detection and summaries | Complete |
+| Impact classification and real-bat calibration | Planned |
 | KiCad schematic and PCB layout | Planned |
 | PCB fabrication and assembly | Planned |
 | Final demonstration | Planned |
@@ -231,7 +223,7 @@ Cricket-Swing-Analyzer/
 
 Development began with microcontroller testing and hardware troubleshooting, followed by successful integration of the Raspberry Pi Pico 2 W and MPU6050.
 
-The next phases focus on motion data analysis, custom PCB design, and complete system integration.
+The next phases focus on calibration with real bat recordings, impact classification, wireless recording, custom PCB design, and complete system integration.
 
 See [`docs/devlog.md`](docs/devlog.md) for detailed development updates.
 
@@ -266,7 +258,7 @@ Contributions, suggestions, and feedback are welcome.
 
 ## Authors
 
-**Nayan Kasireddi**
+**Nayan Kasireddi** and **Shayon Chakraborti** (Python analysis and dashboard)
 
 Electrical and Computer Engineering — The University of Texas at Austin
 

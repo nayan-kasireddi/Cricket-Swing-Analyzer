@@ -18,6 +18,7 @@ Close the plot window to stop. Everything received is saved to data/live/*.csv
 with time in microseconds; load_csv() converts it to seconds.
 """
 import argparse
+import math
 import threading
 import time
 from collections import deque
@@ -46,7 +47,8 @@ def parse_line(line):
         return None
     parts = parts[:len(EXPECTED_COLUMNS)]
     try:
-        return [float(p) for p in parts]
+        row = [float(p) for p in parts]
+        return row if all(math.isfinite(value) for value in row) else None
     except ValueError:
         return None
 

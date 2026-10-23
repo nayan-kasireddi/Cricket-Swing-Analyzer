@@ -104,3 +104,10 @@ def test_streaming_tracker_matches_batch_detector():
             found.append(done)
     assert len(found) == 2
     assert found[0]["peak_g"] > 8 and found[0]["peak_dps"] > 900
+
+def test_streaming_tracker_rejects_short_spikes():
+    from python.swings import SwingTracker
+    tracker = SwingTracker()
+    assert tracker.update(0.0, 5.0, 0.0) is None
+    assert tracker.update(0.25, 1.0, 0.0) is None
+    assert tracker.flush() is None
