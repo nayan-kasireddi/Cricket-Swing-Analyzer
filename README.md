@@ -127,6 +127,10 @@ A 500 Hz target is not a guarantee that every sample arrives on time, so check `
 
 `load_csv()` also accepts the simpler `time,ax,ay,az,gx,gy,gz` form with time in seconds, which the synthetic recordings use.
 
+## Deploy the browser website
+
+The standalone website is in [`netlify-site/`](netlify-site/README.md). Drag that folder into Netlify Drop, or connect this repository: [`netlify.toml`](netlify.toml) publishes it automatically. The browser version reviews recordings on any modern desktop browser and supports live USB in Chrome or Edge on HTTPS or localhost. For local setup, upload instructions, and hardware details, see the [website guide](netlify-site/README.md).
+
 ## Python modules
 
 ## Python Analysis
