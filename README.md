@@ -1,79 +1,57 @@
-# Cricket Bat Swing & Impact Analyzer
+# Crease: Cricket Swing Analyzer
 
-**Embedded Systems | Raspberry Pi Pico 2 W | MPU6050 | Arduino | Python | Streamlit | KiCad**
+**Embedded Systems | Raspberry Pi Pico 2 W | MPU6050 | Arduino | Web | Python | KiCad**
 
-A sensor on a cricket bat, and software that turns its motion into swings you can see. A Raspberry Pi Pico 2 W reads an MPU6050 motion sensor 500 times a second, and a Python dashboard detects each swing and shows how hard and how fast the bat moved, live or from a saved recording.
+**Live site: [creasecricketswing.netlify.app](https://creasecricketswing.netlify.app)**
 
-![Review page: scoreboard, force and spin charts with each swing highlighted](images/dashboard-review.png)
-
-![Live page: streaming a swing from the sensor at 500 Hz](images/dashboard-live.png)
-
-![Swing detail: the swing table and a zoomed view of one swing](images/dashboard-swing-detail.png)
+A sensor on a cricket bat, and a website that turns its motion into swings you can see. A Raspberry Pi Pico 2 W reads an MPU6050 motion sensor 500 times a second. Plug it into your computer, open Crease in the browser, and watch each swing appear as you practice.
 
 ## What it does
 
 - **Reads the sensor:** the firmware samples 3-axis acceleration and 3-axis rotation at a **500 Hz** target (±16 g, ±2000 deg/s) and streams them over USB.
-- **Records and checks the data:** the Python loader validates every recording (columns, sample rate, gaps, timestamps, sensor limits) and explains problems in plain language.
-- **Finds the swings:** a swing is counted once, even though a real swing has several separate acceleration spikes inside it.
-- **Shows it clearly:** a dashboard with a **Live** page (force and spin as you swing, with a log of each swing) and a **Review** page (open a recording, see every swing, zoom into one).
+- **Shows your practice live:** the Crease website connects to the sensor from the browser, draws your swing as it happens, and counts each swing.
+- **Reviews every session:** a session chart with the detected swings shaded, a scorecard for each swing, and a summary you can download.
+- **Works without a sensor:** a demo mode lets anyone try the site with sample data, and saved recordings can be reviewed in any modern desktop browser.
+- **Keeps your data private:** your readings stay in your browser.
+
+## Try it
+
+1. Open **[creasecricketswing.netlify.app](https://creasecricketswing.netlify.app)**.
+2. Click **Try a demo** to see how it works with sample data, no hardware needed.
+3. To use the real sensor, plug the Pico into your computer with a data USB cable and click **Connect sensor**. Live sensor access works in **desktop Chrome and Edge**, and the browser remembers the sensor for next time.
+4. Move the sensor. Each swing is counted and added to the scorecard. Use the **swing trigger** slider (2.5 g by default) to make detection more or less sensitive.
+
+### What the numbers mean
+
+| Reading | Meaning |
+|---|---|
+| Swings detected | How many swings the trigger picked out |
+| Peak acceleration | The strongest push on the sensor, in g, including gravity (a sensor lying still reads about 1 g) |
+| Peak rotation | How fast the bat turns, in degrees per second (360 deg/s is one full turn a second) |
+| Last swing | How long the swing lasted, in seconds |
+
+**About bat speed:** the sensor records acceleration and rotation, not the speed of the bat head in km/h. Crease does not estimate bat speed or compare you with named players, because that needs a validated bat-speed sensor and comparable published measurements. Detected swings are a practice aid, so tune the trigger for your sensor and movement.
 
 ## How it works
 
 ```text
- Pico 2 W (C++ firmware)                      Computer (Python)
- ─────────────────────────                    ──────────────────────────────────────
+ Pico 2 W (C++ firmware)                       Your computer
+ ─────────────────────────                     ─────────────────────────────────────
  MPU6050 over I²C, every 2 ms
- prints one CSV line per sample ── USB ──►   live.py      reads the serial port, saves a CSV
-                                                ▼
-                                              ingest.py    load_csv(): validates and cleans
-                                                ▼
-                                              swings.py    SwingTracker: finds each swing
-                                                ▼
-                                              dashboard.py Streamlit pages (ui.py = look and feel)
+ prints one CSV line per sample ── USB ──►    Crease website (desktop Chrome or Edge)
+                                               reads the sensor, finds the swings,
+                                               and draws your session
 ```
 
-The firmware and the Python never call each other. They only agree on the text format of each line (below).
-
-### Why one swing counts once
-
-A bat swing is one smooth sweep of rotation, but the acceleration has several spikes inside it: the hands speeding the bat up, a peak around contact, and the sudden stop in the follow-through, with dips in between. Counting every spike would count one swing three times.
-
-`SwingTracker` (in `python/swings.py`) treats a swing as active while the force is high **or** the bat is still rotating faster than 150 deg/s. It ends the swing only after things stay calm for 0.2 s, and then ignores new swings for 1 s (a batter cannot swing again that fast). The same tracker runs in the live view and on saved recordings, so both always agree.
-
-## Quick start (no hardware needed)
-
-The repository includes synthetic sample recordings, so you can try the dashboard without a sensor.
-
-```bash
-git clone https://github.com/nayan-kasireddi/Cricket-Swing-Analyzer.git
-cd Cricket-Swing-Analyzer
-python -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-
-python -m streamlit run python/dashboard.py
-```
-
-Run it from the project's top folder so Streamlit finds `.streamlit/config.toml`. The **Review** page opens on `synthetic/multi_swing.csv`: three swings, with a scoreboard, charts and a swing table.
-
-Other commands:
-
-```bash
-python -m pytest -q                       # run the automated tests
-python -m python.live --sim               # live graph with a fake sensor
-python -m python.analyze data/synthetic/multi_swing.csv   # static plots from a recording
-python -m python.generate_test_data       # regenerate the synthetic recordings
-```
-
-Developed on Python 3.14, and Python 3.12 has also been validated. Package versions are not pinned in `requirements.txt`, so a newer release of a library could behave differently.
+The firmware and the website never call each other. They only agree on the text format of each line (see [Data format](#data-format)).
 
 ## Using the real sensor
 
-1. **Wire the sensor** (below) and **upload the firmware** `firmware/pico2w_mpu6050/pico2w_mpu6050.ino` with the Arduino IDE and the Arduino-Pico board package. Hold **BOOTSEL** while plugging the Pico in for the first upload.
-2. **Plug the Pico into your computer** with a data USB cable, close the Arduino Serial Monitor (it locks the port), and start the dashboard.
-3. On the **Live** page, pick the sensor port, click **Start live view**, and move the sensor. Each swing appears in the log. Click **Stop and save** and the session is stored in `data/live/` (these files are git-ignored), ready to open on the **Review** page.
+1. **Wire the sensor** (see [Hardware](#hardware)) and **upload the firmware** `firmware/pico2w_mpu6050/pico2w_mpu6050.ino` with the Arduino IDE and the Arduino-Pico board package. Hold **BOOTSEL** while plugging the Pico in for the first upload.
+2. **Plug the Pico into your computer** with a data USB cable. Close the Arduino Serial Monitor first, because it locks the port.
+3. Open the site, click **Connect sensor**, and choose the Pico from the list.
 
-The live view needs the sensor plugged into the same computer that runs the dashboard. If the Pico is unplugged from power while running, replug it so the firmware sets the sensor up again.
+If the Pico loses power or a wire comes loose while running, replug the Pico so the firmware sets the sensor up again.
 
 ## Hardware
 
@@ -115,161 +93,4 @@ time_us,ax_g,ay_g,az_g,gx_dps,gy_dps,gz_dps,skipped_slots
 ```
 
 | Field | Description | Unit |
-|---|---|---|
-| time_us | Time since the board powered on | Microseconds |
-| ax_g, ay_g, az_g | Acceleration along X, Y, Z | g |
-| gx_dps, gy_dps, gz_dps | Rotation around X, Y, Z | Degrees/second |
-| skipped_slots | Sample slots missed so far | Count |
-
-Lines starting with `#` (a startup banner and sensor error notes) are ignored. A sensor lying still reads about 1 g on one axis, which is gravity.
-
-A 500 Hz target is not a guarantee that every sample arrives on time, so check `skipped_slots` and the sample rate in recordings. `load_csv()` flags recordings with gaps or the wrong rate.
-
-`load_csv()` also accepts the simpler `time,ax,ay,az,gx,gy,gz` form with time in seconds, which the synthetic recordings use.
-
-## Deploy the browser website
-
-The standalone website is in [`netlify-site/`](netlify-site/README.md). Drag that folder into Netlify Drop, or connect this repository: [`netlify.toml`](netlify.toml) publishes it automatically. The browser version reviews recordings on any modern desktop browser and supports live USB in Chrome or Edge on HTTPS or localhost. For local setup, upload instructions, and hardware details, see the [website guide](netlify-site/README.md).
-
-## Python modules
-
-## Python Analysis
-
-The Python workflow is implemented for recorded data and live USB capture. Run commands from the repository root. Python 3.12 is validated in the cloud environment; the repository does not pin package versions.
-
-```bash
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-python -m pip install -r requirements.txt
-python -m pytest python/tests -q
-python -m streamlit run python/dashboard.py
-```
-
-The dashboard has a responsive cricket practice interface with animated local artwork, a **Demo mode** for simulated live sessions, and interactive recording charts (hover for readings, scroll to zoom, drag to explore). Reduced-motion preferences are respected. Session CSVs and swing summaries can be downloaded.
-
-The Live page scans serial ports every second, including when no sensor is connected. Plugging in or reconnecting the Pico updates the picker automatically; start a session when ready. Disconnects or five seconds without samples stop and preserve the session so you can reconnect and start a new one without refreshing the browser. Serial devices must be attached to the machine running Streamlit, not a separate browser device.
-
-The dashboard opens on **Live**: select the Pico serial port, start capture, then **Stop and save** to finish the CSV. Close other serial monitors first. On **Review**, choose a recording (the default is `data/synthetic/multi_swing.csv`), adjust the trigger, and inspect detected swings, peak acceleration, peak rotation, and duration. Recorded timelines are relative to the first saved sample. Live recordings go to ignored `data/live/` files.
-
-Without hardware, use Review with the bundled synthetic recordings or the simulated desktop viewer:
-
-```bash
-python -m python.live --sim
-python -m python.live --list-ports
-python -m python.live --port /dev/ttyACM0
-python -m python.analyze data/synthetic/normal_swing.csv
-```
-
-Use the port reported on your machine (for example `/dev/cu.usbmodem...` on macOS or `COM3` on Windows). The live viewer requires a graphical desktop; close its plot window to save and stop. The analysis command prints statistics, saves a PNG under `images/`, and opens plots. For headless analysis, set `MPLBACKEND=Agg`.
-
-`load_csv()` accepts firmware headers, ignores `#` diagnostics and `skipped_slots`, converts microseconds to seconds, and returns canonical `time,ax,ay,az,gx,gy,gz` columns. Synthetic files already use seconds. It rejects missing/non-numeric/non-finite values, unordered timestamps, large gaps, rates outside 500 Hz ±20%, and values outside ±16 g / ±2000 deg/s. Historical recordings with a different sample rate may be rejected; preserve the original data rather than relabeling it.
-
-`acceleration_magnitude()` combines the three acceleration axes (including gravity); rotation magnitude combines the three gyroscope axes. `SwingTracker` is shared by live and batch detection: default trigger 2.5 g, release at 80% of trigger, rotation hold at 150 deg/s, 0.2 seconds quiet before finishing, 1 second cooldown, minimum duration 0.05 seconds, and a 3 second safety cap. The live dashboard starts at 1.5 g for gentle hand movements. These are heuristic parameters to tune against real bat recordings, not validated impact detection or bat speed estimates. Values in g measure acceleration, not force in newtons, even where the dashboard uses the plain-language label “force.”
-
-NumPy, Pandas, and Matplotlib support analysis; PySerial supports USB capture; Streamlit provides the dashboard; pytest runs regression checks. SciPy is available for future signal processing. `python/core.py` remains an unused algorithm placeholder for ongoing work; the functioning magnitude calculation lives in `python/analyze.py`, and detection lives in `python/swings.py`.
-| File | What it does |
-|---|---|
-| `python/ingest.py` | `load_csv()`: loads a recording, converts units, and checks it (columns, 500 Hz rate, gaps, increasing timestamps, plausible ranges) |
-| `python/swings.py` | `SwingTracker`, `detect_swings()`, `summarize_swings()` |
-| `python/analyze.py` | Acceleration and rotation magnitude, static plots from the command line |
-| `python/live.py` | Reads the serial port on a background thread, saves a CSV, logs swings |
-| `python/dashboard.py` | The Streamlit app (Live and Review pages) |
-| `python/ui.py` | Colors, styling and HTML pieces for the dashboard |
-| `python/generate_test_data.py` | Makes the synthetic recordings (stationary, slow, normal and multi-swing) |
-| `python/core.py` | Placeholder for an alternative analysis implementation, not used |
-| `python/tests/` | Automated tests |
-
-## Current status and limits
-
-This is a working prototype, and it has not yet seen real bat swings.
-
-- **Tuned on synthetic data and hand movements.** The swing trigger (about 1.5 to 2.5 g in testing) and the 150 deg/s rotation hold are provisional. They need retuning on recordings from a sensor mounted on a bat.
-- **Sensor range:** at ±16 g and ±2000 deg/s, a hard hit with the sensor far from the hands could exceed the accelerometer's range. The Review page warns when a recording reaches the sensor's limits.
-- **Not built yet:** impact (bat-ball contact) detection, swing-type classification, wireless transmission, and estimated bat speed. These need real swing data first.
-- **The live view is local:** it only works when the dashboard runs on the computer the sensor is plugged into.
-
-## Development progress
-
-| Milestone | Status |
-|---|---|
-| Repository setup and documentation | Complete |
-| Pico 2 W firmware upload and LED testing | Complete |
-| MPU6050 wiring and soldering | Complete |
-| I²C sensor detection | Complete |
-| Accelerometer and gyroscope streaming | Complete |
-| 500 Hz firmware implementation | Complete |
-| CSV loading and data validation | Complete |
-| Swing detection (counted once per swing) | Complete |
-| Live view and recording | Complete |
-| Dashboard with Live and Review pages | Complete |
-| Automated tests (40+) | Complete |
-| Controlled swing data collection on a bat | Upcoming |
-| Threshold tuning on real swings | Upcoming |
-| Impact detection | Planned |
-| Swing-type classification | Planned |
-| KiCad schematic and PCB layout | In progress |
-| PCB fabrication and assembly | Planned |
-| Final demonstration | Planned |
-
-See [`docs/devlog.md`](docs/devlog.md) and [`docs/shayon_chakraborti_devlog.md`](docs/shayon_chakraborti_devlog.md) for detailed updates.
-
-## Project structure
-
-```text
-Cricket-Swing-Analyzer/
-├── .streamlit/
-│   └── config.toml            # dashboard theme
-├── firmware/
-│   └── pico2w_mpu6050/
-│       └── pico2w_mpu6050.ino
-├── hardware/
-├── python/
-│   ├── tests/
-│   ├── analyze.py
-│   ├── core.py
-│   ├── dashboard.py
-│   ├── generate_test_data.py
-│   ├── ingest.py
-│   ├── live.py
-│   ├── swings.py
-│   └── ui.py
-├── data/
-│   ├── synthetic/             # generated sample recordings
-│   └── live/                  # your recordings (git-ignored)
-├── docs/
-├── images/
-├── README.md
-└── requirements.txt
-```
-
-## Troubleshooting
-
-| Issue | Suggested solution |
-|---|---|
-| No sensor port on the Live page | Use a data-capable USB cable, replug the Pico, and refresh the page |
-| "Port busy" or cannot open the port | Close the Arduino Serial Monitor or any other program using it |
-| Live data stops or looks wrong after a loose wire | Unplug and replug the Pico so the firmware sets the sensor up again |
-| A recording will not open: gap or sample rate error | The recording is missing samples or came from older 100 Hz firmware. Record again |
-| MPU6050 not detected | Check wiring, solder joints, and I²C address `0x68` |
-| Firmware upload fails | Hold BOOTSEL while plugging in the Pico, and confirm the board selection |
-
-## Authors
-
-**Nayan Kasireddi** — hardware, firmware, and PCB design
-Electrical and Computer Engineering, The University of Texas at Austin
-GitHub: [@nayan-kasireddi](https://github.com/nayan-kasireddi)
-
-**Shayon Chakraborti** — Python data pipeline, swing detection, and dashboard
-Statistics and Data Science, The University of Texas at Austin
-GitHub: [@Shayon2307](https://github.com/Shayon2307)
-
-## Acknowledgments
-
-Built with the Raspberry Pi Pico platform, the MPU6050 motion sensor, Arduino, Python (NumPy, pandas, Matplotlib, Streamlit, pySerial), and KiCad. Hardware prototyping and fabrication resources are available through Texas Inventionworks at The University of Texas at Austin.
-
-## Project resources
-
-- [GitHub repository](https://github.com/nayan-kasireddi/Cricket-Swing-Analyzer)
-- [Firmware](firmware/pico2w_mpu6050/pico2w_mpu6050.ino)
-- [Development logs](docs/)
-- [Python code](python/)
+|
