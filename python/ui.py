@@ -27,35 +27,35 @@ footer { visibility: hidden; }
 
 .header-row { display: flex; align-items: flex-end; justify-content: space-between;
               gap: 1rem; flex-wrap: wrap; margin-bottom: .25rem; }
-.page-title { font-family: %(display)s; font-weight: 600; font-size: 2.8rem; line-height: 1.05;
-              color: %(ink)s; margin: 0; }
-.page-sub { color: %(muted)s; font-size: 1.05rem; margin: .35rem 0 1rem; max-width: 62ch; }
+.page-title { font-family: 'Barlow Condensed', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif; font-weight: 600; font-size: 2.8rem; line-height: 1.05;
+              color: #17231C; margin: 0; }
+.page-sub { color: #5B6B61; font-size: 1.05rem; margin: .35rem 0 1rem; max-width: 62ch; }
 
 .pill { display: inline-flex; align-items: center; gap: .5rem; padding: .3rem .85rem;
-        border-radius: 999px; font-size: .92rem; font-weight: 500; background: #E1E8DD; color: %(ink)s; }
-.pill .dot { width: .6rem; height: .6rem; border-radius: 50%%; background: %(muted)s; }
-.pill.live .dot { background: %(outfield)s; }
+        border-radius: 999px; font-size: .92rem; font-weight: 500; background: #E1E8DD; color: #17231C; }
+.pill .dot { width: .6rem; height: .6rem; border-radius: 50%; background: #5B6B61; }
+.pill.live .dot { background: #1F6B3A; }
 .pill.warn { background: #F3E6C8; }
-.pill.warn .dot { background: %(willow)s; }
+.pill.warn .dot { background: #D9B26B; }
 .pill.error { background: #F6DAD7; }
-.pill.error .dot { background: %(ball)s; }
+.pill.error .dot { background: #C8312B; }
 
 .scoreboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
               gap: 1px; background: rgba(243, 245, 239, .18); border-radius: 12px;
               overflow: hidden; margin: 1.1rem 0 1.6rem; }
-.scoreboard .cell { background: %(turf)s; color: %(chalk)s; padding: 1.1rem 1.4rem 1.2rem; }
-.scoreboard .num { font-family: %(display)s; font-weight: 600; font-size: 3.4rem; line-height: 1;
+.scoreboard .cell { background: #0F3D24; color: #F3F5EF; padding: 1.1rem 1.4rem 1.2rem; }
+.scoreboard .num { font-family: 'Barlow Condensed', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif; font-weight: 600; font-size: 3.4rem; line-height: 1;
                    font-variant-numeric: tabular-nums; }
 .scoreboard .unit { font-size: 1.1rem; font-weight: 500; margin-left: .35rem; color: #B9CDBF; }
 .scoreboard .label { margin-top: .4rem; font-size: .98rem; color: #D2E2D7; }
 .scoreboard .note { margin-top: .15rem; font-size: .86rem; color: #A3BDAB; }
 
-.section-title { font-family: %(display)s; font-weight: 600; font-size: 1.6rem; color: %(ink)s;
+.section-title { font-family: 'Barlow Condensed', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif; font-weight: 600; font-size: 1.6rem; color: #17231C;
                  margin: 1.8rem 0 .6rem; }
 
-table.scorecard { width: 100%%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-.scorecard th { text-align: right; font-weight: 500; color: %(muted)s; font-size: .92rem;
-                padding: .5rem .75rem; border-bottom: 2px solid %(ink)s; }
+table.scorecard { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.scorecard th { text-align: right; font-weight: 500; color: #5B6B61; font-size: .92rem;
+                padding: .5rem .75rem; border-bottom: 2px solid #17231C; }
 .scorecard td { text-align: right; padding: .7rem .75rem; border-bottom: 1px solid #D5DCD1;
                 font-size: 1.05rem; }
 .scorecard th:first-child, .scorecard td:first-child { text-align: left; }
