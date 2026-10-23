@@ -15,9 +15,9 @@ const HOLD = 0.2;
 const COOLDOWN = 1;
 const MIN_SWING = 0.05;
 const MIN_GYRO = 150;
-const ACCEL_COLOR = "#26704a";
-const ROTATION_COLOR = "#397492";
-const TRIGGER_COLOR = "#bd614a";
+const ACCEL_COLOR = "#c5fa72";
+const ROTATION_COLOR = "#65c9e8";
+const TRIGGER_COLOR = "#ff805e";
 const state = { rows: [], swings: [], threshold: 2.5, port: null, reader: null,
   running: false, demoTimer: null, demoIndex: 0, demoEpoch: 0, demoRows: [],
   fileName: "", csvParts: [], csvPending: [], tracker: null, sessionStart: null,
