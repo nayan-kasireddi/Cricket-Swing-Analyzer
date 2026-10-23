@@ -82,6 +82,9 @@ def load_csv(path):
             f"{', '.join(bad_cols)} at CSV line(s): {_rows(bad_rows)}"
         )
 
+    if not np.isfinite(df.to_numpy()).all():
+        raise DataValidationError("All sensor values and timestamps must be finite.")
+
     # 4. Timestamps and sample rate
     if len(df) < 2:
         raise DataValidationError("Need at least 2 rows to check the sample rate.")

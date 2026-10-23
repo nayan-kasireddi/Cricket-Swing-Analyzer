@@ -126,7 +126,7 @@ def render_live():
     from serial.tools import list_ports
 
     running = "live_stream" in st.session_state
-    ports = [p.device for p in list_ports.comports() if "usb" in p.device.lower()]
+    ports = [p.device for p in list_ports.comports()]
 
     st.markdown(ui.page_header_html(
         "Live swings",
@@ -207,6 +207,7 @@ def render_review():
         st.error(f"Could not open {choice}: {e} Pick another recording in the sidebar.")
         return
 
+    df["time"] = df["time"] - df["time"].iloc[0]
     acc = acceleration_magnitude(df)
     gyro = rotation_magnitude(df)
     t = df["time"].to_numpy()
