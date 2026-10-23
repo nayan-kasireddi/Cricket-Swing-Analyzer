@@ -129,6 +129,40 @@ A 500 Hz target is not a guarantee that every sample arrives on time, so check `
 
 ## Python modules
 
+## Python Analysis
+
+The Python workflow is implemented for recorded data and live USB capture. Run commands from the repository root. Python 3.12 is validated in the cloud environment; the repository does not pin package versions.
+
+```bash
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+python -m pip install -r requirements.txt
+python -m pytest python/tests -q
+python -m streamlit run python/dashboard.py
+```
+
+The dashboard has a responsive cricket practice interface with animated local artwork, a **Demo mode** for simulated live sessions, and interactive recording charts (hover for readings, scroll to zoom, drag to explore). Reduced-motion preferences are respected. Session CSVs and swing summaries can be downloaded.
+
+The Live page scans serial ports every second, including when no sensor is connected. Plugging in or reconnecting the Pico updates the picker automatically; start a session when ready. Disconnects or five seconds without samples stop and preserve the session so you can reconnect and start a new one without refreshing the browser. Serial devices must be attached to the machine running Streamlit, not a separate browser device.
+
+The dashboard opens on **Live**: select the Pico serial port, start capture, then **Stop and save** to finish the CSV. Close other serial monitors first. On **Review**, choose a recording (the default is `data/synthetic/multi_swing.csv`), adjust the trigger, and inspect detected swings, peak acceleration, peak rotation, and duration. Recorded timelines are relative to the first saved sample. Live recordings go to ignored `data/live/` files.
+
+Without hardware, use Review with the bundled synthetic recordings or the simulated desktop viewer:
+
+```bash
+python -m python.live --sim
+python -m python.live --list-ports
+python -m python.live --port /dev/ttyACM0
+python -m python.analyze data/synthetic/normal_swing.csv
+```
+
+Use the port reported on your machine (for example `/dev/cu.usbmodem...` on macOS or `COM3` on Windows). The live viewer requires a graphical desktop; close its plot window to save and stop. The analysis command prints statistics, saves a PNG under `images/`, and opens plots. For headless analysis, set `MPLBACKEND=Agg`.
+
+`load_csv()` accepts firmware headers, ignores `#` diagnostics and `skipped_slots`, converts microseconds to seconds, and returns canonical `time,ax,ay,az,gx,gy,gz` columns. Synthetic files already use seconds. It rejects missing/non-numeric/non-finite values, unordered timestamps, large gaps, rates outside 500 Hz ±20%, and values outside ±16 g / ±2000 deg/s. Historical recordings with a different sample rate may be rejected; preserve the original data rather than relabeling it.
+
+`acceleration_magnitude()` combines the three acceleration axes (including gravity); rotation magnitude combines the three gyroscope axes. `SwingTracker` is shared by live and batch detection: default trigger 2.5 g, release at 80% of trigger, rotation hold at 150 deg/s, 0.2 seconds quiet before finishing, 1 second cooldown, minimum duration 0.05 seconds, and a 3 second safety cap. The live dashboard starts at 1.5 g for gentle hand movements. These are heuristic parameters to tune against real bat recordings, not validated impact detection or bat speed estimates. Values in g measure acceleration, not force in newtons, even where the dashboard uses the plain-language label “force.”
+
+NumPy, Pandas, and Matplotlib support analysis; PySerial supports USB capture; Streamlit provides the dashboard; pytest runs regression checks. SciPy is available for future signal processing. `python/core.py` remains an unused algorithm placeholder for ongoing work; the functioning magnitude calculation lives in `python/analyze.py`, and detection lives in `python/swings.py`.
 | File | What it does |
 |---|---|
 | `python/ingest.py` | `load_csv()`: loads a recording, converts units, and checks it (columns, 500 Hz rate, gaps, increasing timestamps, plausible ranges) |

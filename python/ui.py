@@ -15,14 +15,14 @@ BALL = "#C8312B"        # ball red: trigger line, peak markers, errors
 WILLOW = "#D9B26B"      # bat tan: swing highlights, warnings
 SKY = "#2F6F8F"         # second data series (spin)
 
-FONT_STACK = "'Barlow', 'Helvetica Neue', Arial, sans-serif"
+FONT_STACK = "DejaVu Sans"
 DISPLAY_STACK = "'Barlow Condensed', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif"
 
 _CSS = """
-@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap');
-
-.stApp, .stApp p, .stApp label, .stApp li, .stApp button, .stApp input { font-family: %(font)s; }
-.block-container { padding-top: 2.2rem; max-width: 1180px; }
+.stApp { background: #F6F5F0; color: #172D25; }
+.stApp, .stApp p, .stApp label, .stApp button, .stApp input { font-family: 'Inter', 'Segoe UI', sans-serif; }
+.block-container { padding-top: 2rem; padding-bottom: 3rem; max-width: 1260px; }
+header[data-testid="stHeader"] { background: transparent; }
 footer { visibility: hidden; }
 
 .header-row { display: flex; align-items: flex-end; justify-content: space-between;
@@ -59,17 +59,22 @@ table.scorecard { width: 100%%; border-collapse: collapse; font-variant-numeric:
 .scorecard td { text-align: right; padding: .7rem .75rem; border-bottom: 1px solid #D5DCD1;
                 font-size: 1.05rem; }
 .scorecard th:first-child, .scorecard td:first-child { text-align: left; }
-.scorecard td.swing { font-family: %(display)s; font-weight: 600; font-size: 1.3rem; }
-.scorecard .force-cell { display: flex; align-items: center; justify-content: flex-end; gap: .8rem; }
-.scorecard .bar { width: 90px; height: 6px; background: #DAE2D6; border-radius: 3px; overflow: hidden; }
-.scorecard .bar span { display: block; height: 100%%; background: %(outfield)s; }
-
-.empty { padding: 1.3rem 1.5rem; border: 1px dashed #B3C0AF; border-radius: 12px; color: %(muted)s;
-         font-size: 1.02rem; }
-""" % {
-    "font": FONT_STACK, "display": DISPLAY_STACK, "ink": INK, "muted": MUTED, "turf": TURF,
-    "outfield": OUTFIELD, "chalk": CHALK, "ball": BALL, "willow": WILLOW,
-}
+.scorecard td.swing { font-weight: 800; font-size: 17px; }
+.scorecard .force-cell { display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
+.scorecard .bar { width: 60px; height: 4px; background: #E5EADB; border-radius: 3px; overflow: hidden; }
+.scorecard .bar span { display: block; height: 100%; background: #8AA864; }
+.empty { padding: 30px; background: #FFFDF8; border: 1px dashed #B7C7A8; border-radius: 16px; color: #65775E; font-size: 14px; line-height: 1.8; }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; padding: 22px 0 12px; }
+.step { font-size: 12px; color: #71816A; line-height: 1.7; }
+.step b { display: block; color: #264A32; font-size: 14px; margin-bottom: 6px; }
+.step span { color: #86A36B; font-size: 10px; letter-spacing: 1px; font-weight: 800; }
+@keyframes flight { to { stroke-dashoffset: -180; } }
+@keyframes float { 50% { transform: translateY(-6px) rotate(8deg); } }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 #689B6550; } 100% { box-shadow: 0 0 0 7px #689B6500; } }
+@keyframes enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 760px) { .hero { padding: 28px 22px; min-height: 220px; } .hero-copy { width: 80%; } .hero-art { right: -80px; opacity: .25; width: 65%; } .scoreboard { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .steps { gap: 14px; } .scoreboard .cell { padding: 18px; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+"""
 
 
 def css():
@@ -92,7 +97,7 @@ def page_header_html(title, subtitle, status=None):
     """Page title and one line of help. status is an optional (state, text) pill."""
     pill = status_pill_html(*status) if status else ""
     return (
-        f'<div class="header-row"><h1 class="page-title">{escape(title)}</h1>{pill}</div>'
+        f'<div class="header-row"><h2 class="page-title">{escape(title)}</h2>{pill}</div>'
         f'<p class="page-sub">{escape(subtitle)}</p>'
     )
 
@@ -144,9 +149,9 @@ def scorecard_html(rows, empty_message="No swings yet. Swing the bat and it will
             "</tr>"
         )
     return (
-        '<table class="scorecard"><thead><tr>'
-        "<th>Swing</th><th>Started at</th><th>Swing time</th><th>Peak force</th><th>Peak spin</th>"
-        f'</tr></thead><tbody>{"".join(body)}</tbody></table>'
+        '<div class="table-wrap"><table class="scorecard"><thead><tr>'
+        "<th>Swing</th><th>Started at</th><th>Swing time</th><th>Peak acceleration</th><th>Peak spin</th>"
+        f'</tr></thead><tbody>{"".join(body)}</tbody></table></div>'
     )
 
 
@@ -156,7 +161,8 @@ def new_figure(rows=2, height=5.2, width=11):
     import matplotlib.pyplot as plt
 
     plt.rcParams.update({
-        "font.family": ["Barlow", "Helvetica Neue", "Arial", "DejaVu Sans"],
+        "font.family": "DejaVu Sans",
+        "font.size": 9, "axes.labelsize": 9,
         "text.color": MUTED, "axes.labelcolor": MUTED,
         "xtick.color": MUTED, "ytick.color": MUTED,
     })
@@ -175,8 +181,9 @@ def new_figure(rows=2, height=5.2, width=11):
 
 
 def draw_force(ax, x, acc, trigger=None):
-    ax.plot(x, acc, color=OUTFIELD, linewidth=1.5)
-    ax.set_ylabel("Force on the bat (g)")
+    ax.fill_between(x, acc, color=OUTFIELD, alpha=0.07)
+    ax.plot(x, acc, color=OUTFIELD, linewidth=1.7)
+    ax.set_ylabel("Acceleration (g)")
     ax.set_ylim(bottom=0)
     if trigger is not None:
         ax.axhline(trigger, color=BALL, linestyle=(0, (5, 4)), linewidth=1.2)
@@ -185,7 +192,8 @@ def draw_force(ax, x, acc, trigger=None):
 
 
 def draw_spin(ax, x, gyro):
-    ax.plot(x, gyro, color=SKY, linewidth=1.5)
+    ax.fill_between(x, gyro, color=SKY, alpha=0.06)
+    ax.plot(x, gyro, color=SKY, linewidth=1.7)
     ax.set_ylabel("Bat spin (deg/s)")
     ax.set_ylim(bottom=0)
 
@@ -195,3 +203,60 @@ def shade_swings(axes, swings):
     for ax in axes:
         for start, end in swings:
             ax.axvspan(start, end, color=WILLOW, alpha=0.35, linewidth=0)
+
+# Inline artwork is local, decorative, and never represents a measured bat path.
+def hero_html(review=False):
+    title = "Every swing.<br>A little better." if not review else "Find your rhythm.<br>Own your next innings."
+    subtitle = ("Your practice, in focus. Connect your sensor, take a swing, and turn movement into insight."
+                if not review else "Go beyond the score. Explore your recordings and get to know the shape of your swing.")
+    return f'''<section class="hero"><div class="hero-copy"><div class="eyebrow">THE PRACTICE LAB / CRICKET SWING ANALYZER</div>
+<h1>{title}</h1><p>{subtitle}</p><div class="hero-foot">MEASURE YOUR MOVEMENT. &nbsp; MAKE IT COUNT.</div></div>
+<svg class="hero-art" viewBox="0 0 400 330" aria-hidden="true" focusable="false">
+<defs><linearGradient id="pitch" x2="1" y2="1"><stop stop-color="#C6D5AB"/><stop offset="1" stop-color="#DCE5CC"/></linearGradient></defs>
+<ellipse cx="215" cy="208" rx="172" ry="110" fill="none" stroke="#C6D6B3" stroke-width="1"/>
+<ellipse cx="215" cy="208" rx="140" ry="86" fill="none" stroke="#C6D6B3" stroke-dasharray="3 7"/>
+<path d="M120 245L239 152L300 183L180 278Z" fill="url(#pitch)"/>
+<path d="M148 244L251 164M163 260L267 180M139 238L178 261M237 163L277 186" stroke="#F9FAED" stroke-width="2"/>
+<path d="M148 231v-25m6 21v-25m6 21v-25m-14 9l15-11" stroke="#6F8760" stroke-width="3" stroke-linecap="round"/>
+<path class="trajectory" d="M192 201Q241 22 349 62" fill="none" stroke="#6C9258" stroke-width="1.5"/>
+<circle cx="349" cy="62" r="10" fill="#C15A3D" class="ball"/><path d="M345 55q-4 8 3 14m4-14q-4 7 3 12" stroke="#F4DAD0" fill="none"/>
+<g transform="rotate(35 221 168)"><rect x="211" y="101" width="21" height="80" rx="7" fill="#C69D60"/><rect x="216" y="107" width="11" height="62" rx="3" fill="#E8CE9B"/><rect x="218" y="175" width="7" height="42" rx="3" fill="#173F2D"/><path d="M217 185h9m-9 6h9m-9 6h9" stroke="#8FAC77" stroke-width="2"/></g>
+<circle cx="290" cy="249" r="25" fill="#193F2E"/><text x="290" y="254" text-anchor="middle" fill="#DDECBC" font-family="sans-serif" font-size="12" font-weight="bold">500</text>
+<text x="290" y="288" text-anchor="middle" fill="#6E855E" font-family="sans-serif" font-size="9" letter-spacing="2">HZ TARGET</text></svg></section>'''
+
+
+def steps_html():
+    return ('''<div class="steps"><div class="step"><span>01 / CONNECT</span><b>Plug in. You're up.</b>Your sensor appears automatically when you connect it.</div>
+<div class="step"><span>02 / PRACTICE</span><b>Make your move.</b>Start a session and watch your swings take shape.</div>
+<div class="step"><span>03 / UNDERSTAND</span><b>Play it back.</b>Save your session and explore every swing in Review.</div></div>''')
+
+
+def motion_chart(t, acc, gyro, threshold, swings):
+    """Linked, zoomable recording charts using Streamlit's existing Altair dependency."""
+    import altair as alt
+    import pandas as pd
+
+    data = pd.DataFrame({"time": t, "acceleration": acc, "rotation": gyro})
+    windows = pd.DataFrame(swings, columns=["start", "end"])
+    charts = []
+    for field, title, color in (("acceleration", "Acceleration · g", OUTFIELD),
+                                ("rotation", "Rotation · degrees / second", SKY)):
+        base = alt.Chart(data).encode(x=alt.X("time:Q", title="Time into recording (s)"))
+        line = base.mark_line(color=color, strokeWidth=2, clip=True).encode(
+            y=alt.Y(f"{field}:Q", title=title, scale=alt.Scale(zero=True)),
+            tooltip=[alt.Tooltip("time:Q", title="Time (s)", format=".3f"),
+                     alt.Tooltip(f"{field}:Q", title=title, format=".2f")],
+        )
+        layers = [base.mark_area(color=color, opacity=0.06).encode(y=f"{field}:Q"), line]
+        if not windows.empty:
+            layers.insert(0, alt.Chart(windows).mark_rect(color=WILLOW, opacity=0.15).encode(
+                x="start:Q", x2="end:Q"))
+        if field == "acceleration":
+            layers.append(alt.Chart(pd.DataFrame({"trigger": [threshold]})).mark_rule(
+                color=BALL, strokeDash=[5, 5], opacity=0.6).encode(y="trigger:Q"))
+        charts.append(alt.layer(*layers).properties(height=175))
+    charts[0] = charts[0].interactive(bind_y=False)
+    return alt.vconcat(*charts, spacing=24).resolve_scale(x="shared").configure_view(
+        stroke=None).configure_axis(gridColor="#E5E9DE", labelColor=MUTED,
+                                   titleColor=MUTED, domain=False, tickSize=0,
+                                   titlePadding=14).configure(background="#F6F5F0")
