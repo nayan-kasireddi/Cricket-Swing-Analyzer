@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#193f2e">
+  <meta name="description" content="A personal cricket practice lab. Capture and explore every swing.">
+  <title>Crease — Cricket Swing Analyzer</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="brand.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="#live" aria-label="Crease home"><span class="brand-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18 18 6M9 6h9v9"/></svg></span><span>crease<span class="brand-period">.</span></span></a>
+    <p class="brand-caption">YOUR PERSONAL PRACTICE LAB</p>
+    <nav class="navigation" aria-label="Main navigation">
+      <button class="nav-button active" data-page="live"><span aria-hidden="true">◉</span> Practice</button>
+      <button class="nav-button" data-page="review"><span aria-hidden="true">▤</span> Review</button>
+    </nav>
+    <div class="sidebar-note">A better innings starts in practice.<br>Capture. Understand. Repeat.<br><br><span>CRICKET SWING ANALYZER</span></div>
+    <div class="sidebar-version">500 HZ · BUILT FOR THE CREASE</div>
+  </aside>
+
+  <main class="main">
+    <section class="hero" aria-label="Welcome">
+      <div class="hero-copy">
+        <p class="eyebrow">THE PRACTICE LAB / CRICKET SWING ANALYZER</p>
+        <h1 id="hero-title">Every swing.<br>A little better.</h1>
+        <p id="hero-subtitle">Your practice, in focus. Take a swing and turn movement into insight.</p>
+        <p class="hero-foot">MEASURE YOUR MOVEMENT. &nbsp; MAKE IT COUNT.</p>
+      </div>
+      <svg class="hero-art" viewBox="0 0 400 330" aria-hidden="true">
+        <ellipse cx="215" cy="208" rx="172" ry="110" fill="none" stroke="#c6d6b3"/>
+        <ellipse cx="215" cy="208" rx="140" ry="86" fill="none" stroke="#c6d6b3" stroke-dasharray="3 7"/>
+        <path d="M120 245L239 152L300 183L180 278Z" fill="#dce5cc"/>
+        <path d="M148 244L251 164M163 260L267 180M139 238L178 261M237 163L277 186" stroke="#fffdf4" stroke-width="2"/>
+        <path d="M148 231v-25m6 21v-25m6 21v-25m-14 9l15-11" stroke="#6f8760" stroke-width="3" stroke-linecap="round"/>
+        <path class="trajectory" d="M192 201Q241 22 349 62" fill="none" stroke="#6c9258" stroke-width="1.5"/>
+        <circle class="cricket-ball" cx="349" cy="62" r="10" fill="#c15a3d"/>
+        <path d="M345 55q-4 8 3 14m4-14q-4 7 3 12" stroke="#f4dad0" fill="none"/>
+        <g transform="rotate(35 221 168)"><rect x="211" y="101" width="21" height="80" rx="7" fill="#c69d60"/><rect x="216" y="107" width="11" height="62" rx="3" fill="#e8ce9b"/><rect x="218" y="175" width="7" height="42" rx="3" fill="#173f2d"/><path d="M217 185h9m-9 6h9m-9 6h9" stroke="#8fac77" stroke-width="2"/></g>
+        <circle cx="290" cy="249" r="25" fill="#193f2e"/>
+        <text x="290" y="254" text-anchor="middle" fill="#ddecba" font-family="sans-serif" font-size="12" font-weight="bold">500</text>
+        <text x="290" y="288" text-anchor="middle" fill="#6e855e" font-family="sans-serif" font-size="9" letter-spacing="2">HZ TARGET</text>
+      </svg>
+    </section>
+
+    <section id="live-page" class="page" aria-labelledby="page-title">
+      <div class="page-heading">
+        <div><p class="eyebrow">YOUR NEXT INNINGS STARTS HERE</p><h2 id="page-title">Practice</h2><p class="page-sub">Connect your sensor or try a demo, then watch your swing come to life.</p></div>
+        <span id="connection-status" class="status"><span class="status-dot"></span><span id="status-label">Ready when you are</span></span>
+      </div>
+
+      <section class="control-card" aria-label="Session controls">
+        <div class="control-intro"><span class="step-number">01</span><span>SET UP YOUR SESSION</span></div>
+        <div class="control-row">
+          <div class="sensor-control">
+            <button id="connect-button" class="button button-dark" type="button">Connect sensor</button>
+            <button id="demo-button" class="button button-soft" type="button">Try a demo</button>
+            <span id="sensor-name" class="sensor-name">No sensor connected</span>
+          </div>
+          <label class="threshold-control" for="threshold-slider"><span>Swing trigger</span><output id="threshold-value" for="threshold-slider">2.5 g</output><input id="threshold-slider" type="range" min="1" max="12" value="2.5" step="0.1"></label>
+          <button id="stop-button" class="button button-stop" type="button" hidden>Stop &amp; save</button>
+        </div>
+        <p id="connection-help" class="helper-text">Plug in your Pico, then choose it once. Reconnects are remembered by your browser.</p>
+        <p id="live-error" class="error-message" role="status" hidden></p>
+      </section>
+
+      <section id="metrics" class="metrics" aria-label="Session stats">
+        <article class="metric-card metric-primary"><p>SWINGS THIS SESSION</p><strong id="swing-count">—</strong><span>detected</span></article>
+        <article class="metric-card"><p>PEAK ACCELERATION</p><strong><span id="peak-acceleration">—</span><small> g</small></strong><span>including gravity</span></article>
+        <article class="metric-card"><p>PEAK ROTATION</p><strong><span id="peak-rotation">—</span><small>°/s</small></strong><span>how fast the bat turns</span></article>
+        <article class="metric-card"><p>LAST SWING</p><strong><span id="last-duration">—</span><small> s</small></strong><span>time in motion</span></article>
+      </section>
+
+      <section class="panel chart-panel" aria-labelledby="live-chart-title">
+        <div class="panel-heading"><div><p class="eyebrow">IN THE MOMENT</p><h3 id="live-chart-title">Your swing, live</h3></div><span id="sample-rate" class="chart-note">Ready for your first reading</span></div>
+        <p class="chart-hint">The shaded line marks your swing trigger. We highlight each swing as it happens.</p>
+        <div id="live-charts" class="chart-stack"><div class="chart-empty"><span class="empty-icon">↗</span><span>Step up to the crease.<br>Your readings will appear here.</span></div></div>
+      </section>
+
+      <section class="panel log-panel" aria-labelledby="log-title">
+        <div class="panel-heading"><div><p class="eyebrow">YOUR SESSION SCORECARD</p><h3 id="log-title">Swings</h3></div><button id="download-live" class="button button-quiet" type="button" hidden>Download CSV ↓</button></div>
+        <div id="live-log" class="empty-log">Your swings will appear here once you start practicing.</div>
+      </section>
+      <p class="disclaimer">Acceleration is measured in g. Rotation is measured in degrees per second. Swing detection is a practice aid; tune the trigger for your sensor and movement.</p>
+    </section>
+
+    <section id="review-page" class="page" aria-labelledby="review-title" hidden>
+      <div class="page-heading">
+        <div><p class="eyebrow">YOUR PRACTICE, PLAYED BACK</p><h2 id="review-title">Review your swings</h2><p class="page-sub">Pick a recording to see the shape of your session and compare every swing.</p></div>
+        <label class="button button-soft upload-button">↑ &nbsp; Open a recording<input id="file-input" type="file" accept=".csv,text/csv" hidden></label>
+      </div>
+      <section class="review-controls" aria-label="Recording selection">
+        <label for="recording-select">PICK A RECORDING</label><select id="recording-select"></select>
+        <label class="threshold-control review-threshold" for="review-threshold"><span>Swing trigger</span><output id="review-threshold-value" for="review-threshold">2.5 g</output><input id="review-threshold" type="range" min="1" max="12" value="2.5" step="0.1"></label>
+      </section>
+      <p id="recording-caption" class="recording-caption"></p>
+      <section class="metrics review-metrics" aria-label="Recording summary">
+        <article class="metric-card metric-primary"><p>SWINGS FOUND</p><strong id="review-swing-count">—</strong><span>in this recording</span></article>
+        <article class="metric-card"><p>PEAK ACCELERATION</p><strong><span id="review-peak-acceleration">—</span><small> g</small></strong><span>strongest swing</span></article>
+        <article class="metric-card"><p>PEAK ROTATION</p><strong><span id="review-peak-rotation">—</span><small>°/s</small></strong><span>fastest turn</span></article>
+        <article class="metric-card"><p>AVERAGE SWING</p><strong><span id="review-average-duration">—</span><small> s</small></strong><span>time in motion</span></article>
+      </section>
+      <section class="panel chart-panel" aria-labelledby="review-chart-title">
+        <div class="panel-heading"><div><p class="eyebrow">THE SHAPE OF YOUR SESSION</p><h3 id="review-chart-title">Every reading, in context</h3></div><button id="download-summary" class="button button-quiet" type="button">Download summary ↓</button></div>
+        <p class="chart-hint">Hover for readings. The red line marks your trigger; shaded bands show detected swings.</p>
+        <div id="review-charts" class="chart-stack"></div>
+      </section>
+      <section class="panel log-panel" aria-labelledby="review-log-title">
+        <div class="panel-heading"><div><p class="eyebrow">TAKE A CLOSER LOOK</p><h3 id="review-log-title">Swing scorecard</h3></div><span id="review-source" class="chart-note"></span></div>
+        <div id="review-log" class="empty-log"></div>
+      </section>
+      <p class="disclaimer">Detected swings are estimated from acceleration and rotation. They don’t measure bat speed, impact, or force in newtons.</p>
+    </section>
+
+    <footer>CREASE<span> · </span>YOUR PERSONAL CRICKET PRACTICE LAB<span> · </span>DATA STAYS IN YOUR BROWSER</footer>
+  </main>
+</body>
+</html>
