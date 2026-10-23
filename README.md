@@ -145,6 +145,10 @@ python -m pytest python/tests -q
 python -m streamlit run python/dashboard.py
 ```
 
+The dashboard has a responsive cricket practice interface with animated local artwork, a **Demo mode** for simulated live sessions, and interactive recording charts (hover for readings, scroll to zoom, drag to explore). Reduced-motion preferences are respected. Session CSVs and swing summaries can be downloaded.
+
+The Live page scans serial ports every second, including when no sensor is connected. Plugging in or reconnecting the Pico updates the picker automatically; start a session when ready. Disconnects or five seconds without samples stop and preserve the session so you can reconnect and start a new one without refreshing the browser. Serial devices must be attached to the machine running Streamlit, not a separate browser device.
+
 The dashboard opens on **Live**: select the Pico serial port, start capture, then **Stop and save** to finish the CSV. Close other serial monitors first. On **Review**, choose a recording (the default is `data/synthetic/multi_swing.csv`), adjust the trigger, and inspect detected swings, peak acceleration, peak rotation, and duration. Recorded timelines are relative to the first saved sample. Live recordings go to ignored `data/live/` files.
 
 Without hardware, use Review with the bundled synthetic recordings or the simulated desktop viewer:

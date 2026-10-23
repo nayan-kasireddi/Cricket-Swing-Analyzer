@@ -105,6 +105,7 @@ class LiveStream:
         self.threshold = threshold_g
         self.samples = deque(maxlen=5000)       # (time_s, accel_mag, gyro_mag)
         self.lock = threading.Lock()
+        self.last_sample_at = time.monotonic()
         self.total = 0
         self.bad_lines = 0
         self.swings = 0
@@ -158,6 +159,7 @@ class LiveStream:
             self.error = e
 
     def _handle(self, row):
+        self.last_sample_at = time.monotonic()
         t = row[0] * SERIAL_TIME_TO_SECONDS
         acc = float(np.sqrt(row[1] ** 2 + row[2] ** 2 + row[3] ** 2))
         gyro = float(np.sqrt(row[4] ** 2 + row[5] ** 2 + row[6] ** 2))
