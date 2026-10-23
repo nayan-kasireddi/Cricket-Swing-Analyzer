@@ -1,0 +1,17 @@
+# Look and feel for the dashboard. Streamlit reads this when started from the project root.
+[theme]
+base = "light"
+primaryColor = "#1F6B3A"
+backgroundColor = "#F3F5EF"
+secondaryBackgroundColor = "#E7ECE3"
+textColor = "#17231C"
+font = "sans serif"
+
+[theme.sidebar]
+backgroundColor = "#0F3D24"
+secondaryBackgroundColor = "#1A5233"
+textColor = "#F3F5EF"
+primaryColor = "#D9B26B"
+
+[client]
+toolbarMode = "minimal"

@@ -33,6 +33,7 @@ from python.ingest import EXPECTED_COLUMNS
 from python.swings import DEFAULT_THRESHOLD_G, SwingTracker
 
 SERIAL_TIME_TO_SECONDS = 1e-6   # the firmware reports time in microseconds
+WARMUP_MAX_STEP_US = 50_000     # two lines closer than this (50 ms) count as live, continuous data
 
 BAUD_RATE = 115200
 WINDOW_SECONDS = 5.0        # how much history the live graph shows
@@ -108,6 +109,8 @@ class LiveStream:
         self.last_swing = ""
         self.error = None
         self.tracker = SwingTracker(threshold_g)
+        self.t0 = None              # board clock at the first saved sample
+        self.swing_log = []         # one dict per finished swing, times relative to session start
         self._stop = threading.Event()
         self._thread = threading.Thread(target=self._run, daemon=True)
 
@@ -124,6 +127,8 @@ class LiveStream:
 
     def _run(self):
         try:
+            prev_us = None      # warm-up: skip stale lines the board had buffered before we connected
+            started = False
             with open(self.csv_path, "w") as f:
                 f.write(",".join(["time_us"] + EXPECTED_COLUMNS[1:]) + "\n")
                 while not self._stop.is_set():
@@ -135,6 +140,14 @@ class LiveStream:
                         if not line.startswith("#") and not line.lower().startswith(EXPECTED_COLUMNS[0]):
                             self.bad_lines += 1
                         continue
+                    if not started:
+                        # The first line(s) after connecting can be old (the board kept streaming
+                        # before anyone was listening). Start once two lines in a row are close in time.
+                        if prev_us is not None and 0 < row[0] - prev_us < WARMUP_MAX_STEP_US:
+                            started = True
+                        prev_us = row[0]
+                        if not started:
+                            continue
                     f.write(",".join(line.strip().split(",")[:len(EXPECTED_COLUMNS)]) + "\n")
                     self._handle(row)
                     if self.total % 100 == 0:
@@ -146,6 +159,8 @@ class LiveStream:
         t = row[0] * SERIAL_TIME_TO_SECONDS
         acc = float(np.sqrt(row[1] ** 2 + row[2] ** 2 + row[3] ** 2))
         gyro = float(np.sqrt(row[4] ** 2 + row[5] ** 2 + row[6] ** 2))
+        if self.t0 is None:
+            self.t0 = t
         with self.lock:
             self.samples.append((t, acc, gyro))
             self.total += 1
@@ -156,6 +171,13 @@ class LiveStream:
         done = self.tracker.update(t, acc, gyro)
         if done:
             self.swings += 1
+            self.swing_log.append({
+                "number": self.swings,
+                "start": done["start"] - self.t0,
+                "duration": done["end"] - done["start"],
+                "peak_g": done["peak_g"],
+                "peak_dps": done["peak_dps"],
+            })
             self.last_swing = (f"swing {self.swings}: peak {done['peak_g']:.1f} g, "
                                f"{done['peak_dps']:.0f} deg/s, {done['end'] - done['start']:.2f} s")
             print(self.last_swing)
