@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#193f2e">
-  <meta name="description" content="A personal cricket practice lab. Capture and explore every swing.">
+  <meta name="theme-color" content="#091211">
+  <meta name="description" content="A focused cricket swing practice lab. Connect your Pico sensor, capture movement, and explore every swing.">
   <title>Crease — Cricket Swing Analyzer</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
@@ -64,7 +64,7 @@
           <label class="threshold-control" for="threshold-slider"><span>Swing trigger</span><output id="threshold-value" for="threshold-slider">2.5 g</output><input id="threshold-slider" type="range" min="1" max="12" value="2.5" step="0.1"></label>
           <button id="stop-button" class="button button-stop" type="button" hidden>Stop &amp; save</button>
         </div>
-        <p id="connection-help" class="helper-text">Plug in your Pico, then choose it once. Reconnects are remembered by your browser.</p>
+        <p id="connection-help" class="helper-text">Plug in your Pico, then choose it once. Live sensor access is supported in desktop Chrome and Edge; reconnects are remembered by your browser.</p>
         <p id="live-error" class="error-message" role="status" hidden></p>
       </section>
 
@@ -104,6 +104,7 @@
         <article class="metric-card"><p>PEAK ROTATION</p><strong><span id="review-peak-rotation">—</span><small>°/s</small></strong><span>fastest turn</span></article>
         <article class="metric-card"><p>AVERAGE SWING</p><strong><span id="review-average-duration">—</span><small> s</small></strong><span>time in motion</span></article>
       </section>
+      <aside class="speed-note" aria-label="Bat speed measurement note"><span class="speed-mark" aria-hidden="true">↗</span><span><strong>About bat speed</strong> &nbsp;This sensor records acceleration and rotation, not bat-head speed in km/h. A fair comparison with named players needs a validated bat-speed sensor and published, comparable measurements, so this dashboard won’t invent a pro ranking.</span></aside>
       <section class="panel chart-panel" aria-labelledby="review-chart-title">
         <div class="panel-heading"><div><p class="eyebrow">THE SHAPE OF YOUR SESSION</p><h3 id="review-chart-title">Every reading, in context</h3></div><button id="download-summary" class="button button-quiet" type="button">Download summary ↓</button></div>
         <p class="chart-hint">Hover for readings. The red line marks your trigger; shaded bands show detected swings.</p>
@@ -116,7 +117,7 @@
       <p class="disclaimer">Detected swings are estimated from acceleration and rotation. They don’t measure bat speed, impact, or force in newtons.</p>
     </section>
 
-    <footer>CREASE<span> · </span>YOUR PERSONAL CRICKET PRACTICE LAB<span> · </span>DATA STAYS IN YOUR BROWSER</footer>
+    <footer>CREASE<span> · </span>YOUR PERSONAL CRICKET PRACTICE LAB<span> · </span>DATA STAYS IN YOUR BROWSER <span class="developer-credit">Developed by Nayan Kasireddi &amp; Shayon Chakraborti</span></footer>
   </main>
 </body>
 </html>
