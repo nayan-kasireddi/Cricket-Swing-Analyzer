@@ -29,7 +29,7 @@ footer { visibility: hidden; }
               gap: 1rem; flex-wrap: wrap; margin-bottom: .25rem; }
 .page-title { font-family: %(display)s; font-weight: 600; font-size: 2.8rem; line-height: 1.05;
               color: %(ink)s; margin: 0; }
-.page-sub { color: %(muted)s; font-size: 1.05rem; margin: .35rem 0 0; max-width: 62ch; }
+.page-sub { color: %(muted)s; font-size: 1.05rem; margin: .35rem 0 1rem; max-width: 62ch; }
 
 .pill { display: inline-flex; align-items: center; gap: .5rem; padding: .3rem .85rem;
         border-radius: 999px; font-size: .92rem; font-weight: 500; background: #E1E8DD; color: %(ink)s; }
