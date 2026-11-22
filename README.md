@@ -47,7 +47,7 @@ The firmware and the website never call each other. They only agree on the text 
 
 ## Using the real sensor
 
-1. **Wire the sensor** (see [Hardware](#hardware)) and **upload the firmware** `firmware/pico2w_mpu6050/pico2w_mpu6050.ino` with the Arduino IDE and the Arduino-Pico board package. Hold **BOOTSEL** while plugging the Pico in for the first upload.
+1. **Assemble the sensor on the V1 PCB or wire it on a breadboard** (see [Hardware](#hardware)) and **upload the firmware** `firmware/pico2w_mpu6050/pico2w_mpu6050.ino` with the Arduino IDE and the Arduino-Pico board package. Hold **BOOTSEL** while plugging the Pico in for the first upload.
 2. **Plug the Pico into your computer** with a data USB cable. Close the Arduino Serial Monitor first, because it locks the port.
 3. Open the site, click **Connect sensor**, and choose the Pico from the list.
 
@@ -61,7 +61,7 @@ If the Pico loses power or a wire comes loose while running, replug the Pico so 
 | MPU6050 (GY-521) | 6-axis accelerometer and gyroscope |
 | Breadboard and jumper wires | Prototyping |
 | USB cable (data-capable) | Power, programming and serial data |
-| Custom PCB (in progress) | Compact version for mounting on a bat |
+| Custom PCB (V1) | Carrier board for the Pico 2 W and GY-521 IMU |
 
 | MPU6050 | Raspberry Pi Pico 2 W |
 |---|---|
@@ -71,6 +71,16 @@ If the Pico loses power or a wire comes loose while running, replug the Pico so 
 | SCL | GP5 (Pin 7) |
 
 The sensor communicates over I²C at address `0x68`.
+
+### V1 PCB
+
+The V1 carrier board has been fabricated and assembled. The Pico 2 W and GY-521 MPU6050 module were soldered onto the board on November 21, 2026. During a handheld test on November 22, Crease displayed live acceleration and rotation data over USB as the sensor was swung by hand.
+
+| Fabricated PCB | Assembled PCB |
+|---|---|
+| ![Bare blue V1 carrier PCB](images/pcb-v1/bare-pcb.jpg) | ![V1 carrier PCB with the Pico 2 W and GY-521 installed](images/pcb-v1/assembled-pcb.jpg) |
+
+[KiCad PCB layout](hardware/pcb/V1cricket_swing_carrier.kicad_pcb) · [KiCad schematic](hardware/schematic/V1cricket_swing_carrier.kicad_sch) · [Build and test log](docs/devlog.md#november-18-2026--v1-pcb-order)
 
 ## Firmware
 
@@ -138,7 +148,7 @@ The Python `SwingTracker` treats a swing as active while the force is high **or*
 
 ## Current status and limits
 
-This is a working prototype, and it has not yet seen real bat swings.
+The assembled V1 PCB streams motion data to Crease over USB. Bat-mounted testing is upcoming.
 
 - **Tuned on synthetic data and hand movements.** The swing trigger and the other detection settings are provisional. They need retuning on recordings from a sensor mounted on a bat.
 - **No bat speed, impact, or force in newtons.** The sensor measures acceleration and rotation only, and Crease reports exactly that.
@@ -164,8 +174,9 @@ This is a working prototype, and it has not yet seen real bat swings.
 | Threshold tuning on real swings | Upcoming |
 | Impact detection | Planned |
 | Swing-type classification | Planned |
-| KiCad schematic and PCB layout | In progress |
-| PCB fabrication and assembly | Planned |
+| V1 KiCad schematic and PCB layout | Complete |
+| V1 PCB fabrication and assembly | Complete |
+| V1 PCB handheld test in Crease | Complete (November 22, 2026) |
 | Final demonstration | Planned |
 
 See [`docs/devlog.md`](docs/devlog.md) and [`docs/shayon_chakraborti_devlog.md`](docs/shayon_chakraborti_devlog.md) for detailed updates.

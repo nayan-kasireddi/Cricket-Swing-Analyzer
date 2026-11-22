@@ -45,3 +45,18 @@
 - Validated stationary sensor measurements, with acceleration magnitude approximately 1.02g and small gyroscope offsets.
 - Completed initial firmware and sensor communication validation for the higher-frequency data acquisition system.
 - Next steps: Record longer datasets, calibrate sensor offsets, test controlled cricket bat swings, and begin developing Python algorithms for swing and impact detection.
+
+## November 18, 2026 – V1 PCB order
+
+- Ordered the V1 carrier PCB designed in KiCad. The fabricated board arrived before assembly on November 21.
+- [KiCad PCB layout](../hardware/pcb/V1cricket_swing_carrier.kicad_pcb) · [Bare PCB photo](../images/pcb-v1/bare-pcb.jpg)
+
+## November 21, 2026 – V1 PCB assembly
+
+- Soldered the Raspberry Pi Pico 2 W and GY-521 MPU6050 IMU onto the fabricated carrier PCB.
+- [Assembled PCB photo](../images/pcb-v1/assembled-pcb.jpg)
+
+## November 22, 2026 – Live sensor test in Crease
+
+- Connected the assembled PCB to Crease over USB and swung the sensor by hand. Crease displayed live acceleration and rotation traces that responded to the movement.
+- Bat-mounted data collection and threshold tuning are upcoming.
